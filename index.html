@@ -14,7 +14,6 @@
             cursor: pointer;
         }
 
-        /* Sol */
         .ground {
             position: absolute;
             bottom: 0;
@@ -25,36 +24,41 @@
             z-index: 10;
         }
 
-        /* Graine */
         .seed {
             position: absolute;
-            width: 8px;
-            height: 12px;
-            background: #654321;
             border-radius: 50%;
             transform: translateX(-50%);
             z-index: 5;
         }
 
-        /* Plante (conteneur pour l'effet de vent) */
-        .plant {
+        .plant-wrapper {
             position: absolute;
-            bottom: 20px; /* Juste au-dessus du sol */
+            bottom: 20px;
+            z-index: 4;
+            transform: translateX(-50%);
+        }
+
+        .plant-tracker {
+            transform-origin: bottom center;
+            transition: transform 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .plant {
             display: flex;
             flex-direction: column;
             align-items: center;
             transform-origin: bottom center;
-            z-index: 4;
         }
 
-        /* Conteneur de la fleur pour qu'elle s'étende depuis le centre */
         .flower-container {
             position: relative;
             width: 0;
             height: 0;
         }
 
-        /* Fleur */
         .flower {
             position: absolute;
             top: 50%;
@@ -62,22 +66,17 @@
             transform: translate(-50%, -50%);
             width: 0;
             height: 0;
-            border-radius: 50%;
-            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Effet de rebond à l'éclosion */
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
 
-        /* Centre de la fleur */
         .flower::after {
             content: '';
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 30%;
-            height: 30%;
-            background: #ffeb3b;
             border-radius: 50%;
             opacity: 0;
             transition: opacity 1s ease-in 0.5s;
@@ -87,15 +86,36 @@
             opacity: 1;
         }
 
-        /* Tige */
         .stem {
             width: 6px;
             background: linear-gradient(to right, #2e8b57, #3cb371);
-            height: 0; /* Commence à 0 */
+            height: 0;
             border-radius: 3px;
+            transition: background 2s ease-in;
         }
 
-        /* Animation du vent (oscillation) */
+        /* Effet fane (wilting) */
+        .plant-wrapper.wilted .flower {
+            filter: grayscale(80%) sepia(50%) hue-rotate(-50deg) brightness(0.6);
+            transform: translate(-50%, -50%) scale(0.8) rotate(30deg);
+            transition: all 2s ease-in;
+        }
+
+        .plant-wrapper.wilted .flower::after {
+            opacity: 0.5;
+            transition: all 2s ease-in;
+        }
+
+        .plant-wrapper.wilted .stem {
+            background: linear-gradient(to right, #654321, #8b5a2b);
+        }
+
+        .plant-wrapper.dead {
+            opacity: 0;
+            transition: opacity 2s ease-out;
+            pointer-events: none;
+        }
+
         @keyframes sway {
             0% { transform: rotate(-5deg); }
             100% { transform: rotate(5deg); }
@@ -106,7 +126,6 @@
         .sway-3 { animation: sway 5s ease-in-out infinite alternate; }
         .sway-4 { animation: sway 3.5s ease-in-out infinite alternate-reverse; }
 
-        /* Texte d'instruction */
         .instruction {
             position: absolute;
             top: 20px;
@@ -131,98 +150,209 @@
     <div class="ground"></div>
 
     <script>
+        const FLOWER_TYPES = [
+            {
+                name: 'Tournesol',
+                seedColor: '#3e2723',
+                seedShape: '40% 40% 50% 50%',
+                seedWidth: '10px',
+                seedHeight: '16px',
+                flowerBg: 'radial-gradient(circle, #ffd700 0%, #ffaa00 100%)',
+                centerBg: '#3e2723',
+                centerSize: '50%',
+                lifespan: 15000,
+                borderRadius: '50%'
+            },
+            {
+                name: 'Rose',
+                seedColor: '#5c4033',
+                seedShape: '50%',
+                seedWidth: '7px',
+                seedHeight: '10px',
+                flowerBg: 'radial-gradient(circle, #ff0844 0%, #cc0000 100%)',
+                centerBg: '#800000',
+                centerSize: '20%',
+                lifespan: 12000,
+                borderRadius: '50%'
+            },
+            {
+                name: 'Marguerite',
+                seedColor: '#d2b48c',
+                seedShape: '50%',
+                seedWidth: '6px',
+                seedHeight: '12px',
+                flowerBg: 'radial-gradient(circle, #ffffff 60%, #e0e0e0 100%)',
+                centerBg: '#ffd700',
+                centerSize: '40%',
+                lifespan: 8000,
+                borderRadius: '50%'
+            },
+            {
+                name: 'Tulipe',
+                seedColor: '#8b4513',
+                seedShape: '50% 50% 40% 40%',
+                seedWidth: '8px',
+                seedHeight: '14px',
+                flowerBg: 'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)',
+                centerBg: 'transparent',
+                centerSize: '0%',
+                lifespan: 10000,
+                borderRadius: '40% 40% 50% 50% / 60% 60% 40% 40%'
+            }
+        ];
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        const trackers = [];
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            updateTrackers();
+        });
+
+        function updateTrackers() {
+            const groundY = window.innerHeight - 20;
+            trackers.forEach(obj => {
+                if (obj.isDead) return;
+
+                const dx = mouseX - obj.x;
+                const dy = mouseY - groundY;
+
+                // Angle to the mouse (0 is straight up)
+                let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+
+                // Limit the bending angle to avoid breaking the visual
+                angle = Math.max(-45, Math.min(45, angle));
+
+                obj.element.style.transform = `rotate(${angle}deg)`;
+            });
+        }
+
         document.body.addEventListener('click', function(e) {
             createSeed(e.clientX, e.clientY);
         });
 
         function createSeed(x, y) {
+            const type = FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)];
+
             const seed = document.createElement('div');
             seed.className = 'seed';
             seed.style.left = x + 'px';
             seed.style.top = y + 'px';
+            seed.style.width = type.seedWidth;
+            seed.style.height = type.seedHeight;
+            seed.style.background = type.seedColor;
+            seed.style.borderRadius = type.seedShape;
             document.body.appendChild(seed);
 
-            // Forcer le reflow
             seed.offsetHeight;
 
-            // Calculer la distance de chute et la durée
-            const groundY = window.innerHeight - 20; // 20px est la hauteur du sol
+            const groundY = window.innerHeight - 20;
             const distance = groundY - y;
 
-            // Si on clique en dessous du sol, on ne fait rien
             if (distance <= 0) {
                 seed.remove();
                 return;
             }
 
-            // Durée basée sur la distance (vitesse constante) + un minimum
             const duration = Math.max(0.5, Math.sqrt(distance) / 20);
 
-            seed.style.transition = `top ${duration}s cubic-bezier(0.55, 0.085, 0.68, 0.53)`; // Accélération de la gravité
-            seed.style.top = (groundY - 10) + 'px'; // Atterrit sur le sol
+            seed.style.transition = `top ${duration}s cubic-bezier(0.55, 0.085, 0.68, 0.53)`;
+            // Plante la graine légèrement dans le sol
+            seed.style.top = (groundY - parseInt(type.seedHeight) + 4) + 'px';
 
-            // Quand la graine touche le sol
             setTimeout(() => {
                 seed.remove();
-                growPlant(x);
+                growPlant(x, type);
             }, duration * 1000);
         }
 
-        function growPlant(x) {
+        function growPlant(x, type) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'plant-wrapper';
+            wrapper.style.left = x + 'px';
+
+            const tracker = document.createElement('div');
+            tracker.className = 'plant-tracker';
+
+            const trackerObj = { element: tracker, x: x, isDead: false };
+            trackers.push(trackerObj);
+
             const plant = document.createElement('div');
             plant.className = 'plant';
-            plant.style.left = x + 'px';
-            plant.style.transform = 'translateX(-50%)'; // Centrer sur le point de clic
-
-            // Ajouter une classe d'oscillation aléatoire pour le vent
-            const swayClass = 'sway-' + (Math.floor(Math.random() * 4) + 1);
-            plant.classList.add(swayClass);
+            plant.classList.add('sway-' + (Math.floor(Math.random() * 4) + 1));
 
             const flowerContainer = document.createElement('div');
             flowerContainer.className = 'flower-container';
 
             const flower = document.createElement('div');
             flower.className = 'flower';
+            flower.style.background = type.flowerBg;
+            flower.style.borderRadius = type.borderRadius;
 
-            // Couleurs aléatoires pour la fleur
-            const colors = [
-                'radial-gradient(circle, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)', // Rose
-                'radial-gradient(circle, #a18cd1 0%, #fbc2eb 100%)', // Violet
-                'radial-gradient(circle, #f6d365 0%, #fda085 100%)', // Orange/Jaune
-                'radial-gradient(circle, #84fab0 0%, #8fd3f4 100%)', // Vert/Bleu
-                'radial-gradient(circle, #ff0844 0%, #ffb199 100%)', // Rouge
-                'radial-gradient(circle, #00c6fb 0%, #005bea 100%)'  // Bleu profond
-            ];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            flower.style.background = color;
+            const style = document.createElement('style');
+            const uniqueClass = 'flower-' + Math.random().toString(36).substr(2, 9);
+            flower.classList.add(uniqueClass);
+            style.innerHTML = `
+                .${uniqueClass}::after {
+                    background: ${type.centerBg};
+                    width: ${type.centerSize};
+                    height: ${type.centerSize};
+                }
+            `;
+            document.head.appendChild(style);
 
             const stem = document.createElement('div');
             stem.className = 'stem';
 
-            // Construire la structure
             flowerContainer.appendChild(flower);
             plant.appendChild(flowerContainer);
             plant.appendChild(stem);
-            document.body.appendChild(plant);
+            tracker.appendChild(plant);
+            wrapper.appendChild(tracker);
+            document.body.appendChild(wrapper);
 
-            // Hauteur aléatoire de la tige
-            const targetHeight = 80 + Math.random() * 200; // Entre 80 et 280px
-            const growDuration = targetHeight / 50; // Vitesse de pousse
+            const targetHeight = 80 + Math.random() * 200;
+            const growDuration = targetHeight / 50;
 
-            stem.style.transition = `height ${growDuration}s ease-out`;
+            stem.style.transition = `height ${growDuration}s ease-out, background 2s ease-in`;
 
-            // Déclencher la pousse de la tige
             setTimeout(() => {
                 stem.style.height = targetHeight + 'px';
+                updateTrackers();
             }, 50);
 
-            // Attendre que la tige ait fini de pousser, puis faire éclore la fleur
             setTimeout(() => {
-                const size = 30 + Math.random() * 40; // Taille entre 30 et 70px
+                const size = 30 + Math.random() * 40;
                 flower.style.width = size + 'px';
                 flower.style.height = size + 'px';
                 flower.style.opacity = '1';
                 flower.classList.add('bloomed');
+
+                // Cycle de vie
+                setTimeout(() => {
+                    // La fleur fane
+                    wrapper.classList.add('wilted');
+
+                    setTimeout(() => {
+                        // La fleur meurt et disparait
+                        wrapper.classList.add('dead');
+                        trackerObj.isDead = true;
+
+                        setTimeout(() => {
+                            wrapper.remove();
+                            style.remove();
+                            const index = trackers.indexOf(trackerObj);
+                            if (index > -1) {
+                                trackers.splice(index, 1);
+                            }
+                        }, 2000);
+
+                    }, 3000); // 3 secondes fanées avant de disparaître
+
+                }, type.lifespan); // Temps adapté à chaque fleur
+
             }, growDuration * 1000 + 100);
         }
     </script>
