@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Le Jardin de Vie</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 100%);
+            height: 100vh;
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* Sol */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: #228b22;
+            z-index: 10;
+        }
+
+        /* Graine */
+        .seed {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            background: #654321;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+        }
+
+        /* Plante (conteneur pour l'effet de vent) */
+        .plant {
+            position: absolute;
+            bottom: 20px; /* Juste au-dessus du sol */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform-origin: bottom center;
+            z-index: 4;
+        }
+
+        /* Conteneur de la fleur pour qu'elle s'étende depuis le centre */
+        .flower-container {
+            position: relative;
+            width: 0;
+            height: 0;
+        }
+
+        /* Fleur */
+        .flower {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Effet de rebond à l'éclosion */
+            opacity: 0;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Centre de la fleur */
+        .flower::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            background: #ffeb3b;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 1s ease-in 0.5s;
+        }
+
+        .flower.bloomed::after {
+            opacity: 1;
+        }
+
+        /* Tige */
+        .stem {
+            width: 6px;
+            background: linear-gradient(to right, #2e8b57, #3cb371);
+            height: 0; /* Commence à 0 */
+            border-radius: 3px;
+        }
+
+        /* Animation du vent (oscillation) */
+        @keyframes sway {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        .sway-1 { animation: sway 3s ease-in-out infinite alternate; }
+        .sway-2 { animation: sway 4s ease-in-out infinite alternate-reverse; }
+        .sway-3 { animation: sway 5s ease-in-out infinite alternate; }
+        .sway-4 { animation: sway 3.5s ease-in-out infinite alternate-reverse; }
+
+        /* Texte d'instruction */
+        .instruction {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #555;
+            font-size: 1.2rem;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0.8;
+            animation: fadeOut 5s forwards 3s;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+    </style>
+</head>
+<body>
+    <div class="instruction">Cliquez sur l'écran pour planter une graine...</div>
+    <div class="ground"></div>
+
+    <script>
+        document.body.addEventListener('click', function(e) {
+            createSeed(e.clientX, e.clientY);
+        });
+
+        function createSeed(x, y) {
+            const seed = document.createElement('div');
+            seed.className = 'seed';
+            seed.style.left = x + 'px';
+            seed.style.top = y + 'px';
+            document.body.appendChild(seed);
+
+            // Forcer le reflow
+            seed.offsetHeight;
+
+            // Calculer la distance de chute et la durée
+            const groundY = window.innerHeight - 20; // 20px est la hauteur du sol
+            const distance = groundY - y;
+
+            // Si on clique en dessous du sol, on ne fait rien
+            if (distance <= 0) {
+                seed.remove();
+                return;
+            }
+
+            // Durée basée sur la distance (vitesse constante) + un minimum
+            const duration = Math.max(0.5, Math.sqrt(distance) / 20);
+
+            seed.style.transition = `top ${duration}s cubic-bezier(0.55, 0.085, 0.68, 0.53)`; // Accélération de la gravité
+            seed.style.top = (groundY - 10) + 'px'; // Atterrit sur le sol
+
+            // Quand la graine touche le sol
+            setTimeout(() => {
+                seed.remove();
+                growPlant(x);
+            }, duration * 1000);
+        }
+
+        function growPlant(x) {
+            const plant = document.createElement('div');
+            plant.className = 'plant';
+            plant.style.left = x + 'px';
+            plant.style.transform = 'translateX(-50%)'; // Centrer sur le point de clic
+
+            // Ajouter une classe d'oscillation aléatoire pour le vent
+            const swayClass = 'sway-' + (Math.floor(Math.random() * 4) + 1);
+            plant.classList.add(swayClass);
+
+            const flowerContainer = document.createElement('div');
+            flowerContainer.className = 'flower-container';
+
+            const flower = document.createElement('div');
+            flower.className = 'flower';
+
+            // Couleurs aléatoires pour la fleur
+            const colors = [
+                'radial-gradient(circle, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)', // Rose
+                'radial-gradient(circle, #a18cd1 0%, #fbc2eb 100%)', // Violet
+                'radial-gradient(circle, #f6d365 0%, #fda085 100%)', // Orange/Jaune
+                'radial-gradient(circle, #84fab0 0%, #8fd3f4 100%)', // Vert/Bleu
+                'radial-gradient(circle, #ff0844 0%, #ffb199 100%)', // Rouge
+                'radial-gradient(circle, #00c6fb 0%, #005bea 100%)'  // Bleu profond
+            ];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            flower.style.background = color;
+
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+
+            // Construire la structure
+            flowerContainer.appendChild(flower);
+            plant.appendChild(flowerContainer);
+            plant.appendChild(stem);
+            document.body.appendChild(plant);
+
+            // Hauteur aléatoire de la tige
+            const targetHeight = 80 + Math.random() * 200; // Entre 80 et 280px
+            const growDuration = targetHeight / 50; // Vitesse de pousse
+
+            stem.style.transition = `height ${growDuration}s ease-out`;
+
+            // Déclencher la pousse de la tige
+            setTimeout(() => {
+                stem.style.height = targetHeight + 'px';
+            }, 50);
+
+            // Attendre que la tige ait fini de pousser, puis faire éclore la fleur
+            setTimeout(() => {
+                const size = 30 + Math.random() * 40; // Taille entre 30 et 70px
+                flower.style.width = size + 'px';
+                flower.style.height = size + 'px';
+                flower.style.opacity = '1';
+                flower.classList.add('bloomed');
+            }, growDuration * 1000 + 100);
+        }
+    </script>
+</body>
+</html>
