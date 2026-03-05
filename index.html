@@ -29,8 +29,21 @@
 
         .dropped-seed {
             position: absolute; z-index: 100; pointer-events: auto; cursor: pointer;
-            border-radius: 50%; border: 1px solid #fff; box-shadow: 0 0 8px rgba(255,255,255,0.8);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Forme de graine */
+            border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 0 8px rgba(255,255,255,0.5);
             animation: pulse 1s infinite alternate;
+            transform-origin: bottom center;
+        }
+        .falling-seed {
+            position: absolute; z-index: 50; pointer-events: none;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Forme de graine */
+            transform: translateX(-50%);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .seed-base {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 10px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 5;
         }
         @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 100% { transform: translateX(-50%) scale(1.2); } }
 
@@ -989,12 +1002,41 @@
         // 4. Logique de Plantation et Cycle
         function plantSeed(x, seedId) {
             const def = SEED_DEFS.find(s => s.id === seedId);
+            const groundY = window.innerHeight - 40;
 
+            // Animation de la graine qui tombe
+            const fallingSeed = document.createElement('div');
+            fallingSeed.className = 'falling-seed';
+            fallingSeed.style.width = '16px'; fallingSeed.style.height = '12px';
+            fallingSeed.style.background = def.color;
+            fallingSeed.style.left = x + 'px';
+            fallingSeed.style.top = mouseY + 'px'; // Commence à la souris
+            fallingSeed.style.transition = 'top 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
+
+            gameArea.appendChild(fallingSeed);
+
+            // Déclenche la chute
+            setTimeout(() => {
+                fallingSeed.style.top = (groundY - 5) + 'px';
+            }, 50);
+
+            // Quand ça touche le sol, on fait pousser
+            setTimeout(() => {
+                fallingSeed.remove();
+                growPlant(x, def);
+            }, 850);
+        }
+
+        function growPlant(x, def) {
             const wrapper = document.createElement('div');
             wrapper.className = 'plant-wrapper';
             wrapper.style.left = x + 'px';
 
             if(def.behavior === 'giant_low_drop') wrapper.classList.add('giant');
+
+            const seedBase = document.createElement('div');
+            seedBase.className = 'seed-base';
+            seedBase.style.background = def.color;
 
             const stem = document.createElement('div');
             stem.className = 'stem';
@@ -1005,6 +1047,7 @@
             flower.style.width = '30px'; flower.style.height = '30px';
             flower.style.background = def.color;
 
+            wrapper.appendChild(seedBase);
             wrapper.appendChild(stem);
             wrapper.appendChild(flower);
             gameArea.appendChild(wrapper);
@@ -1012,7 +1055,7 @@
             const p = {
                 x: x, def: def, age: 0, state: 'growing',
                 maxHeight: 100 + Math.random() * 100,
-                elements: { wrapper, stem, flower }
+                elements: { wrapper, stem, flower, seedBase }
             };
 
             // Interaction Potion
@@ -1056,16 +1099,17 @@
             if(p.forceMaxDrops) dropCount = maxDrops;
             if(p.forceZeroDrops) dropCount = 0;
 
+            let stemHeight = p.elements.stem.offsetHeight || 100;
             for(let i=0; i<dropCount; i++) {
-                spawnDrop(p.x, p.def);
+                spawnDrop(p.x, p.def, stemHeight);
             }
         }
 
-        function spawnDrop(x, def) {
+        function spawnDrop(x, def, startHeight) {
             const groundY = window.innerHeight - 40;
             const drop = document.createElement('div');
             drop.className = 'dropped-seed';
-            drop.style.width = '12px'; drop.style.height = '12px';
+            drop.style.width = '16px'; drop.style.height = '12px'; // Plus grosse pour visibilité
             drop.style.background = def.color;
 
             // Dispersion
@@ -1076,16 +1120,18 @@
             if(def.behavior === 'explode') endX = x + (Math.random() - 0.5) * 400;
 
             drop.style.left = startX + 'px';
-            drop.style.top = (groundY - 50) + 'px';
+            // Tombe depuis la hauteur de la fleur (-40 correspond à la hauteur du sol, on soustrait la tige)
+            drop.style.top = (groundY - startHeight) + 'px';
             gameArea.appendChild(drop);
 
             let ds = { element: drop, x: endX };
             droppedSeeds.push(ds);
 
             setTimeout(() => {
-                drop.style.transition = 'all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+                drop.style.transition = 'all 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53)'; // Physique de chute
                 drop.style.left = endX + 'px';
-                drop.style.top = groundY + 'px';
+                // La graine atterrit exactement SUR le sol (12px de hauteur / 2 + un petit décalage = -12px par rapport à groundY)
+                drop.style.top = (groundY - 12) + 'px';
             }, 50);
 
             drop.addEventListener('click', (e) => {
