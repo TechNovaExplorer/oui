@@ -12,6 +12,8 @@
             height: 100vh;
             position: relative;
             cursor: pointer;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
 
         .ground {
@@ -22,13 +24,14 @@
             height: 20px;
             background: #228b22;
             z-index: 10;
+            pointer-events: none;
         }
 
         .seed {
             position: absolute;
-            border-radius: 50%;
             transform: translateX(-50%);
             z-index: 5;
+            pointer-events: none;
         }
 
         .plant-wrapper {
@@ -36,6 +39,7 @@
             bottom: 20px;
             z-index: 4;
             transform: translateX(-50%);
+            pointer-events: none;
         }
 
         .plant-tracker {
@@ -77,7 +81,6 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            border-radius: 50%;
             opacity: 0;
             transition: opacity 1s ease-in 0.5s;
         }
@@ -94,7 +97,6 @@
             transition: background 2s ease-in;
         }
 
-        /* Effet fane (wilting) */
         .plant-wrapper.wilted .flower {
             filter: grayscale(80%) sepia(50%) hue-rotate(-50deg) brightness(0.6);
             transform: translate(-50%, -50%) scale(0.8) rotate(30deg);
@@ -126,85 +128,310 @@
         .sway-3 { animation: sway 5s ease-in-out infinite alternate; }
         .sway-4 { animation: sway 3.5s ease-in-out infinite alternate-reverse; }
 
-        .instruction {
+        /* UI Styles */
+        #ui-layer {
             position: absolute;
-            top: 20px;
+            top: 0;
+            left: 0;
             width: 100%;
-            text-align: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #555;
-            font-size: 1.2rem;
-            pointer-events: none;
-            user-select: none;
-            opacity: 0.8;
-            animation: fadeOut 5s forwards 3s;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to plant */
+            z-index: 100;
         }
 
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events: auto;
+            display: flex;
+            gap: 20px;
+            align-items: center;
         }
+
+        .money {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .shop-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        .shop-btn:active { transform: scale(0.95); }
+
+        .inventory-bar {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            pointer-events: auto;
+            display: flex;
+            gap: 10px;
+            max-width: 90vw;
+            overflow-x: auto;
+        }
+
+        .inventory-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 10px;
+            border: 2px solid transparent;
+            min-width: 60px;
+            transition: background 0.2s;
+        }
+
+        .inventory-item:hover { background: #f0f0f0; }
+        .inventory-item.selected { border-color: #4CAF50; background: #e8f5e9; }
+
+        .inv-seed-icon {
+            width: 20px;
+            height: 20px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .inv-count {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        /* Modal Shop */
+        .shop-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            z-index: 1000;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .shop-modal.active { display: block; }
+
+        .shop-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .close-shop {
+            background: #ff5252;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .shop-item {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .shop-item-preview {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .shop-item-preview .flower {
+            opacity: 1;
+            width: 30px;
+            height: 30px;
+        }
+        .shop-item-preview .flower::after {
+            opacity: 1;
+        }
+
+        .shop-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn-buy, .btn-sell {
+            flex: 1;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+
+        .btn-buy { background: #4CAF50; }
+        .btn-sell { background: #2196F3; }
+        .btn-buy:disabled, .btn-sell:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Dropped Seeds */
+        .dropped-seed {
+            position: absolute;
+            z-index: 100;
+            pointer-events: auto;
+            cursor: grab;
+            transition: top 1s cubic-bezier(0.55, 0.085, 0.68, 0.53), left 1s ease-out;
+            animation: pulse 1s infinite alternate;
+            box-shadow: 0 0 5px rgba(255,255,255,0.8);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translateX(-50%); }
+            100% { transform: scale(1.2) translateX(-50%); }
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            pointer-events: auto;
+        }
+        .overlay.active { display: block; }
+
+        .error-msg {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 200;
+        }
+
     </style>
 </head>
 <body>
-    <div class="instruction">Cliquez sur l'écran pour planter une graine...</div>
     <div class="ground"></div>
+    <div id="game-area" style="position: absolute; width: 100%; height: 100%; z-index: 1;"></div>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div id="ui-layer">
+        <div class="hud">
+            <div class="money">💰 <span id="money-display">50</span></div>
+            <button class="shop-btn" id="open-shop-btn">🏪 Boutique</button>
+        </div>
+
+        <div class="inventory-bar" id="inventory-bar">
+            <!-- Items generés par JS -->
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="shop-modal" id="shop-modal">
+        <div class="shop-header">
+            <h2>Boutique de Graines</h2>
+            <button class="close-shop" id="close-shop-btn">X</button>
+        </div>
+        <div class="shop-grid" id="shop-grid">
+            <!-- Items generés par JS -->
+        </div>
+    </div>
 
     <script>
         const FLOWER_TYPES = [
-            {
-                name: 'Tournesol',
-                seedColor: '#3e2723',
-                seedShape: '40% 40% 50% 50%',
-                seedWidth: '10px',
-                seedHeight: '16px',
-                flowerBg: 'radial-gradient(circle, #ffd700 0%, #ffaa00 100%)',
-                centerBg: '#3e2723',
-                centerSize: '50%',
-                lifespan: 15000,
-                borderRadius: '50%'
-            },
-            {
-                name: 'Rose',
-                seedColor: '#5c4033',
-                seedShape: '50%',
-                seedWidth: '7px',
-                seedHeight: '10px',
-                flowerBg: 'radial-gradient(circle, #ff0844 0%, #cc0000 100%)',
-                centerBg: '#800000',
-                centerSize: '20%',
-                lifespan: 12000,
-                borderRadius: '50%'
-            },
-            {
-                name: 'Marguerite',
-                seedColor: '#d2b48c',
-                seedShape: '50%',
-                seedWidth: '6px',
-                seedHeight: '12px',
-                flowerBg: 'radial-gradient(circle, #ffffff 60%, #e0e0e0 100%)',
-                centerBg: '#ffd700',
-                centerSize: '40%',
-                lifespan: 8000,
-                borderRadius: '50%'
-            },
-            {
-                name: 'Tulipe',
-                seedColor: '#8b4513',
-                seedShape: '50% 50% 40% 40%',
-                seedWidth: '8px',
-                seedHeight: '14px',
-                flowerBg: 'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)',
-                centerBg: 'transparent',
-                centerSize: '0%',
-                lifespan: 10000,
-                borderRadius: '40% 40% 50% 50% / 60% 60% 40% 40%'
-            }
+            // Originales
+            { id: 'tournesol', name: 'Tournesol', cost: 10, seedColor: '#3e2723', seedShape: '40% 40% 50% 50%', seedWidth: '10px', seedHeight: '16px', flowerBg: 'radial-gradient(circle, #ffd700 0%, #ffaa00 100%)', centerBg: '#3e2723', centerSize: '50%', lifespan: 15000, borderRadius: '50%' },
+            { id: 'rose', name: 'Rose', cost: 20, seedColor: '#5c4033', seedShape: '50%', seedWidth: '7px', seedHeight: '10px', flowerBg: 'radial-gradient(circle, #ff0844 0%, #cc0000 100%)', centerBg: '#800000', centerSize: '20%', lifespan: 12000, borderRadius: '50%' },
+            { id: 'marguerite', name: 'Marguerite', cost: 10, seedColor: '#d2b48c', seedShape: '50%', seedWidth: '6px', seedHeight: '12px', flowerBg: 'radial-gradient(circle, #ffffff 60%, #e0e0e0 100%)', centerBg: '#ffd700', centerSize: '40%', lifespan: 8000, borderRadius: '50%' },
+            { id: 'tulipe', name: 'Tulipe', cost: 30, seedColor: '#8b4513', seedShape: '50% 50% 40% 40%', seedWidth: '8px', seedHeight: '14px', flowerBg: 'linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%)', centerBg: 'transparent', centerSize: '0%', lifespan: 10000, borderRadius: '40% 40% 50% 50% / 60% 60% 40% 40%' },
+
+            // 17 Nouvelles et Innovantes
+            { id: 'orchidee_cristal', name: 'Orchidée Cristalline', cost: 50, seedColor: '#e0ffff', seedShape: '0% 100% 0% 100%', seedWidth: '8px', seedHeight: '8px', flowerBg: 'linear-gradient(45deg, #00ffff, #ffffff)', centerBg: '#0000ff', centerSize: '10%', lifespan: 20000, borderRadius: '0% 100% 0% 100%' },
+            { id: 'dionee', name: 'Dionée Omnivore', cost: 75, seedColor: '#2e8b57', seedShape: '50% 50% 0 0', seedWidth: '12px', seedHeight: '8px', flowerBg: 'radial-gradient(circle, #ff0000 20%, #228b22 80%)', centerBg: '#000', centerSize: '30%', lifespan: 14000, borderRadius: '50% 50% 20% 20%' },
+            { id: 'nenuphar', name: 'Nénuphar Céleste', cost: 60, seedColor: '#87ceeb', seedShape: '50%', seedWidth: '15px', seedHeight: '5px', flowerBg: 'radial-gradient(circle, #ffffff 30%, #ffb6c1 100%)', centerBg: '#ffff00', centerSize: '25%', lifespan: 18000, borderRadius: '50% 50% 40% 40%' },
+            { id: 'lotus_feu', name: 'Lotus de Feu', cost: 100, seedColor: '#ff4500', seedShape: '50% 0 50% 0', seedWidth: '10px', seedHeight: '10px', flowerBg: 'radial-gradient(circle, #ffff00 0%, #ff4500 100%)', centerBg: '#8b0000', centerSize: '20%', lifespan: 12000, borderRadius: '50% 0 50% 50%' },
+            { id: 'rose_noire', name: 'Rose Noire', cost: 150, seedColor: '#1a1a1a', seedShape: '50%', seedWidth: '7px', seedHeight: '10px', flowerBg: 'radial-gradient(circle, #4a004a 0%, #000000 100%)', centerBg: '#800080', centerSize: '15%', lifespan: 25000, borderRadius: '50%' },
+            { id: 'liane_elec', name: 'Liane Électrique', cost: 80, seedColor: '#ffff00', seedShape: '0%', seedWidth: '5px', seedHeight: '15px', flowerBg: 'conic-gradient(#00ffff, #ffff00, #00ffff)', centerBg: '#ffffff', centerSize: '40%', lifespan: 9000, borderRadius: '20%' },
+            { id: 'champi_bio', name: 'Champignon Bioluminescent', cost: 120, seedColor: '#00fa9a', seedShape: '50% 50% 20% 20%', seedWidth: '8px', seedHeight: '12px', flowerBg: 'radial-gradient(circle, #00fa9a 0%, #000080 100%)', centerBg: '#00fa9a', centerSize: '10%', lifespan: 30000, borderRadius: '50% 50% 10% 10%' },
+            { id: 'fleur_ombre', name: 'Fleur d\'Ombre', cost: 90, seedColor: '#333', seedShape: '50%', seedWidth: '9px', seedHeight: '9px', flowerBg: 'radial-gradient(circle, #111 0%, #555 100%)', centerBg: '#000', centerSize: '60%', lifespan: 16000, borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%' },
+            { id: 'xeno', name: 'Plante Extraterrestre', cost: 200, seedColor: '#8a2be2', seedShape: '30% 70% 70% 30%', seedWidth: '14px', seedHeight: '14px', flowerBg: 'conic-gradient(#ff00ff, #00ffff, #ff00ff)', centerBg: '#32cd32', centerSize: '20%', lifespan: 15000, borderRadius: '30% 70% 50% 50%' },
+            { id: 'fleur_glace', name: 'Fleur de Glace', cost: 110, seedColor: '#add8e6', seedShape: '0%', seedWidth: '8px', seedHeight: '16px', flowerBg: 'radial-gradient(circle, #ffffff 0%, #add8e6 100%)', centerBg: '#00008b', centerSize: '10%', lifespan: 22000, borderRadius: '0%' },
+            { id: 'tournesol_sol', name: 'Tournesol Solaire', cost: 250, seedColor: '#ffa500', seedShape: '50%', seedWidth: '12px', seedHeight: '12px', flowerBg: 'radial-gradient(circle, #ffffff 0%, #ff8c00 100%)', centerBg: '#ffff00', centerSize: '70%', lifespan: 18000, borderRadius: '50%' },
+            { id: 'oeil_dragon', name: 'Oeil de Dragon', cost: 300, seedColor: '#8b0000', seedShape: '50% 0 50% 0', seedWidth: '15px', seedHeight: '8px', flowerBg: 'radial-gradient(circle, #ff0000 0%, #8b0000 100%)', centerBg: '#000', centerSize: '10%', lifespan: 20000, borderRadius: '50%' },
+            { id: 'mecanique', name: 'Fleur Mécanique', cost: 180, seedColor: '#708090', seedShape: '0%', seedWidth: '10px', seedHeight: '10px', flowerBg: 'conic-gradient(#cd7f32, #c0c0c0, #cd7f32)', centerBg: '#000', centerSize: '30%', lifespan: 40000, borderRadius: '20%' },
+            { id: 'cristal_sang', name: 'Cristal de Sang', cost: 400, seedColor: '#dc143c', seedShape: '50% 0 50% 0', seedWidth: '10px', seedHeight: '20px', flowerBg: 'linear-gradient(to bottom, #ff0000, #800000)', centerBg: '#fff', centerSize: '5%', lifespan: 24000, borderRadius: '0 50% 0 50%' },
+            { id: 'slime', name: 'Bave de Slime', cost: 130, seedColor: '#7fff00', seedShape: '40% 60% 70% 30%', seedWidth: '14px', seedHeight: '10px', flowerBg: 'radial-gradient(circle, #7fff00 0%, #32cd32 100%)', centerBg: '#006400', centerSize: '15%', lifespan: 28000, borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' },
+            { id: 'nebuleuse', name: 'Fleur Nébuleuse', cost: 500, seedColor: '#4b0082', seedShape: '50%', seedWidth: '12px', seedHeight: '12px', flowerBg: 'radial-gradient(circle, #ff69b4, #8a2be2, #00008b)', centerBg: '#fff', centerSize: '20%', lifespan: 35000, borderRadius: '50%' },
+            { id: 'anemone', name: 'Anémone Terrestre', cost: 140, seedColor: '#ff69b4', seedShape: '20%', seedWidth: '10px', seedHeight: '10px', flowerBg: 'repeating-radial-gradient(circle, #ff69b4, #ff4500 10%)', centerBg: '#ff1493', centerSize: '30%', lifespan: 17000, borderRadius: '20%' },
+            { id: 'fractale', name: 'Fleur Fractale', cost: 600, seedColor: '#00ced1', seedShape: '0%', seedWidth: '8px', seedHeight: '8px', flowerBg: 'conic-gradient(#ff0000, #00ff00, #0000ff, #ff0000)', centerBg: '#fff', centerSize: '50%', lifespan: 32000, borderRadius: '30%' },
+            { id: 'or_massif', name: 'Fleur d\'Or Massif', cost: 1000, seedColor: '#ffd700', seedShape: '50%', seedWidth: '15px', seedHeight: '15px', flowerBg: 'radial-gradient(circle, #ffffff 0%, #ffd700 80%, #b8860b 100%)', centerBg: '#fff8dc', centerSize: '40%', lifespan: 50000, borderRadius: '50%' },
+            { id: 'arc_en_ciel', name: 'Arc-en-ciel Infinie', cost: 800, seedColor: '#ff00ff', seedShape: '50%', seedWidth: '12px', seedHeight: '12px', flowerBg: 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)', centerBg: '#fff', centerSize: '10%', lifespan: 25000, borderRadius: '50%' },
+            { id: 'trou_noir', name: 'Singularité', cost: 5000, seedColor: '#000', seedShape: '50%', seedWidth: '6px', seedHeight: '6px', flowerBg: 'radial-gradient(circle, #000 60%, #4b0082 90%, #fff 100%)', centerBg: '#000', centerSize: '90%', lifespan: 60000, borderRadius: '50%' }
         ];
+
+        let money = 50;
+        // Start with 5 tournesols
+        let inventory = {
+            'tournesol': 5
+        };
+        let selectedSeedId = 'tournesol';
 
         let mouseX = window.innerWidth / 2;
         let mouseY = window.innerHeight / 2;
         const trackers = [];
 
+        const gameArea = document.getElementById('game-area');
+
+        // Initialisation
+        renderInventory();
+        renderShop();
+        updateMoney();
+
+        // Mouse Tracking
         document.addEventListener('mousemove', (e) => {
             mouseX = e.clientX;
             mouseY = e.clientY;
@@ -215,26 +442,46 @@
             const groundY = window.innerHeight - 20;
             trackers.forEach(obj => {
                 if (obj.isDead) return;
-
                 const dx = mouseX - obj.x;
                 const dy = mouseY - groundY;
-
-                // Angle to the mouse (0 is straight up)
                 let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
-
-                // Limit the bending angle to avoid breaking the visual
                 angle = Math.max(-45, Math.min(45, angle));
-
                 obj.element.style.transform = `rotate(${angle}deg)`;
             });
         }
 
-        document.body.addEventListener('click', function(e) {
-            createSeed(e.clientX, e.clientY);
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 2000);
+        }
+
+        // Planting Mechanics
+        gameArea.addEventListener('click', function(e) {
+            // Check UI click
+            if(e.target.closest('.hud') || e.target.closest('.inventory-bar') || e.target.closest('.shop-modal') || e.target.closest('.dropped-seed')) {
+                return;
+            }
+
+            if (!selectedSeedId || !inventory[selectedSeedId] || inventory[selectedSeedId] <= 0) {
+                showError("Vous n'avez pas cette graine !");
+                return;
+            }
+
+            // Deduct seed
+            inventory[selectedSeedId]--;
+            renderInventory();
+
+            createSeed(e.clientX, e.clientY, selectedSeedId);
         });
 
-        function createSeed(x, y) {
-            const type = FLOWER_TYPES[Math.floor(Math.random() * FLOWER_TYPES.length)];
+        function getFlowerType(id) {
+            return FLOWER_TYPES.find(f => f.id === id);
+        }
+
+        function createSeed(x, y, seedId) {
+            const type = getFlowerType(seedId);
 
             const seed = document.createElement('div');
             seed.className = 'seed';
@@ -253,13 +500,15 @@
 
             if (distance <= 0) {
                 seed.remove();
+                // Refund seed
+                inventory[seedId]++;
+                renderInventory();
                 return;
             }
 
             const duration = Math.max(0.5, Math.sqrt(distance) / 20);
 
             seed.style.transition = `top ${duration}s cubic-bezier(0.55, 0.085, 0.68, 0.53)`;
-            // Plante la graine légèrement dans le sol
             seed.style.top = (groundY - parseInt(type.seedHeight) + 4) + 'px';
 
             setTimeout(() => {
@@ -299,6 +548,7 @@
                     background: ${type.centerBg};
                     width: ${type.centerSize};
                     height: ${type.centerSize};
+                    border-radius: ${type.borderRadius};
                 }
             `;
             document.head.appendChild(style);
@@ -332,29 +582,215 @@
 
                 // Cycle de vie
                 setTimeout(() => {
-                    // La fleur fane
                     wrapper.classList.add('wilted');
 
                     setTimeout(() => {
-                        // La fleur meurt et disparait
                         wrapper.classList.add('dead');
                         trackerObj.isDead = true;
+
+                        // Drop seeds
+                        dropSeeds(x, type);
 
                         setTimeout(() => {
                             wrapper.remove();
                             style.remove();
                             const index = trackers.indexOf(trackerObj);
-                            if (index > -1) {
-                                trackers.splice(index, 1);
-                            }
+                            if (index > -1) trackers.splice(index, 1);
                         }, 2000);
 
-                    }, 3000); // 3 secondes fanées avant de disparaître
+                    }, 3000);
 
-                }, type.lifespan); // Temps adapté à chaque fleur
+                }, type.lifespan);
 
             }, growDuration * 1000 + 100);
         }
+
+        function dropSeeds(x, type) {
+            const groundY = window.innerHeight - 20;
+
+            for(let i=0; i<3; i++) {
+                const seed = document.createElement('div');
+                seed.className = 'dropped-seed';
+                seed.style.width = type.seedWidth;
+                seed.style.height = type.seedHeight;
+                seed.style.background = type.seedColor;
+                seed.style.borderRadius = type.seedShape;
+
+                // Start slightly above
+                seed.style.left = x + 'px';
+                seed.style.top = (groundY - 100) + 'px';
+
+                document.body.appendChild(seed);
+
+                seed.offsetHeight; // Reflow
+
+                // Scatter horizontally
+                const offsetX = (Math.random() - 0.5) * 60;
+                seed.style.left = (x + offsetX) + 'px';
+                seed.style.top = (groundY - parseInt(type.seedHeight)) + 'px';
+
+                // Collect event
+                seed.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Don't plant
+                    collectSeed(type.id, seed);
+                });
+
+                // Auto disappear if not collected
+                setTimeout(() => {
+                    if(seed.parentNode) seed.remove();
+                }, 15000);
+            }
+        }
+
+        function collectSeed(id, el) {
+            if(el.parentNode) el.remove();
+            inventory[id] = (inventory[id] || 0) + 1;
+
+            // Si on vient de ramasser une graine et qu'on a rien sélectionné, on la sélectionne
+            if(!inventory[selectedSeedId] || inventory[selectedSeedId] === 0) {
+                selectedSeedId = id;
+            }
+
+            renderInventory();
+
+            // Visual feedback
+            const fb = document.createElement('div');
+            fb.innerText = "+1";
+            fb.style.position = 'absolute';
+            fb.style.left = el.style.left;
+            fb.style.top = el.style.top;
+            fb.style.color = '#fff';
+            fb.style.fontWeight = 'bold';
+            fb.style.textShadow = '0 0 2px #000';
+            fb.style.pointerEvents = 'none';
+            fb.style.transition = 'all 1s ease-out';
+            fb.style.zIndex = 1000;
+            document.body.appendChild(fb);
+
+            fb.offsetHeight;
+            fb.style.top = (parseInt(el.style.top) - 50) + 'px';
+            fb.style.opacity = '0';
+
+            setTimeout(() => fb.remove(), 1000);
+        }
+
+        // UI Functions
+        function updateMoney() {
+            document.getElementById('money-display').innerText = money;
+        }
+
+        function renderInventory() {
+            const bar = document.getElementById('inventory-bar');
+            bar.innerHTML = '';
+
+            // Render only owned seeds
+            Object.keys(inventory).forEach(id => {
+                if(inventory[id] > 0) {
+                    const type = getFlowerType(id);
+                    const item = document.createElement('div');
+                    item.className = 'inventory-item';
+                    if(selectedSeedId === id) item.classList.add('selected');
+
+                    item.innerHTML = `
+                        <div class="inv-seed-icon">
+                            <div style="width:${type.seedWidth}; height:${type.seedHeight}; background:${type.seedColor}; border-radius:${type.seedShape};"></div>
+                        </div>
+                        <div class="inv-count">${inventory[id]}</div>
+                    `;
+
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selectedSeedId = id;
+                        renderInventory();
+                    });
+
+                    bar.appendChild(item);
+                }
+            });
+
+            if (Object.keys(inventory).filter(id => inventory[id] > 0).length === 0) {
+                selectedSeedId = null;
+            }
+        }
+
+        function renderShop() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+
+            FLOWER_TYPES.forEach(type => {
+                const sellPrice = Math.floor(type.cost / 5) || 1;
+                const owned = inventory[type.id] || 0;
+
+                const item = document.createElement('div');
+                item.className = 'shop-item';
+
+                item.innerHTML = `
+                    <div class="shop-item-preview">
+                        <div class="flower" style="background:${type.flowerBg}; border-radius:${type.borderRadius}; position:relative; width:30px; height:30px; transform:translate(0,0); top:0; left:5px;">
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:${type.centerSize}; height:${type.centerSize}; background:${type.centerBg}; border-radius:${type.borderRadius};"></div>
+                        </div>
+                    </div>
+                    <h4>${type.name}</h4>
+                    <p style="font-size:0.8rem; margin:5px 0;">Possédé: <span id="owned-${type.id}">${owned}</span></p>
+                    <div class="shop-actions">
+                        <button class="btn-buy" id="buy-${type.id}" ${money < type.cost ? 'disabled' : ''}>Acheter (${type.cost}💰)</button>
+                        <button class="btn-sell" id="sell-${type.id}" ${owned === 0 ? 'disabled' : ''}>Vendre (${sellPrice}💰)</button>
+                    </div>
+                `;
+
+                grid.appendChild(item);
+
+                // Buy Event
+                document.getElementById(`buy-${type.id}`).addEventListener('click', () => {
+                    if(money >= type.cost) {
+                        money -= type.cost;
+                        inventory[type.id] = (inventory[type.id] || 0) + 1;
+                        if(!selectedSeedId) selectedSeedId = type.id;
+                        updateMoney();
+                        renderInventory();
+                        renderShop(); // Re-render to update buttons
+                    }
+                });
+
+                // Sell Event
+                document.getElementById(`sell-${type.id}`).addEventListener('click', () => {
+                    if(inventory[type.id] > 0) {
+                        money += sellPrice;
+                        inventory[type.id]--;
+                        if(inventory[type.id] === 0 && selectedSeedId === type.id) selectedSeedId = null;
+                        updateMoney();
+                        renderInventory();
+                        renderShop();
+                    }
+                });
+            });
+        }
+
+        // Shop Modal Toggle
+        const shopBtn = document.getElementById('open-shop-btn');
+        const closeBtn = document.getElementById('close-shop-btn');
+        const modal = document.getElementById('shop-modal');
+        const overlay = document.getElementById('overlay');
+
+        shopBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            renderShop(); // Refresh amounts
+            modal.classList.add('active');
+            overlay.classList.add('active');
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            modal.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
     </script>
 </body>
 </html>
