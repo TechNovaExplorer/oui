@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>L'Éveil</title>
+    <style>
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB, #E0F6FF);
+            height: 100vh; font-family: 'Segoe UI', sans-serif; user-select: none;
+            color: #333;
+        }
+        .ground { position: absolute; bottom: 0; left: 0; width: 100%; height: 40px; background: #4CAF50; z-index: 10; border-top: 2px solid #388E3C; pointer-events: none; }
+        #game-area { position: absolute; width: 100%; height: 100%; z-index: 1; }
+
+        .seed { position: absolute; transform: translateX(-50%); z-index: 5; pointer-events: none; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); }
+        .plant-wrapper { position: absolute; bottom: 40px; z-index: 4; transform: translateX(-50%); pointer-events: none; }
+
+        .stem { width: 4px; background: #228b22; height: 0; border-radius: 2px; transform-origin: bottom center; }
+        .flower { position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%) scale(0); border-radius: 50%; transition: transform 0.5s; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .flower::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(0,0,0,0.5); width: 30%; height: 30%; }
+
+        .plant-wrapper.bloomed .flower { transform: translate(-50%, -50%) scale(1); }
+        .plant-wrapper.wilted .stem { background: #5c4033 !important; }
+        .plant-wrapper.wilted .flower { filter: grayscale(100%) brightness(0.5); transform: translate(-50%, -50%) scale(0.7); }
+        .plant-wrapper.hide { transform: translateX(-50%) translateY(100%); transition: transform 0.2s; }
+        .plant-wrapper.giant .stem { width: 10px; }
+        .plant-wrapper.giant .flower { width: 80px !important; height: 80px !important; }
+
+        .dropped-seed {
+            position: absolute; z-index: 100; pointer-events: auto; cursor: pointer;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Forme de graine */
+            border: 1px solid rgba(0,0,0,0.2); box-shadow: 0 0 8px rgba(255,255,255,0.5);
+            animation: pulse 1s infinite alternate;
+            transform-origin: bottom center;
+        }
+        .falling-seed {
+            position: absolute; z-index: 50; pointer-events: none;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; /* Forme de graine */
+            transform: translateX(-50%);
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .seed-base {
+            position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 10px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            z-index: 5;
+        }
+        @keyframes pulse { 0% { transform: translateX(-50%) scale(1); } 100% { transform: translateX(-50%) scale(1.2); } }
+
+        /* UI Styles */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .hud { position: absolute; top: 10px; left: 10px; background: white; padding: 10px 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: auto; display: flex; align-items: center; gap: 15px; border: 1px solid #eee; }
+        .money { font-size: 1.2rem; font-weight: bold; color: #d4af37; }
+        button { background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 0.9rem; }
+        button:hover:not(:disabled) { background: #45a049; }
+        button:disabled { background: #ccc; cursor: not-allowed; color: #888; }
+
+        .inventory-bar { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background: white; padding: 10px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #eee; pointer-events: auto; display: flex; gap: 10px; max-width: 90vw; overflow-x: auto; }
+        .inventory-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 8px 15px; border-radius: 10px; border: 2px solid transparent; min-width: 40px; background: #f9f9f9; color: #333; }
+        .inventory-item:hover { background: #eee; }
+        .inventory-item.selected { border-color: #4CAF50; background: #e8f5e9; }
+        .inv-seed-icon { width: 15px; height: 15px; border-radius: 50%; margin-bottom: 5px; border: 1px solid rgba(255,255,255,0.5); }
+        .inv-count { font-weight: bold; font-size: 0.9rem; }
+
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 10px; border: 2px solid #555; pointer-events: auto; z-index: 1000; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto; color: white; }
+        .modal.active { display: block; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .shop-item { border: 1px solid #444; border-radius: 5px; padding: 15px; background: #222; text-align: center; }
+        .shop-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .shop-actions button { flex: 1; padding: 5px; font-size: 0.8rem; }
+
+        .contracts-list, .lab-area { display: flex; flex-direction: column; gap: 10px; }
+        .contract, .lab-slot { background: #222; border: 1px solid #444; padding: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+
+        .lab-select { display: flex; gap: 10px; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .lab-select select { background: #333; color: white; border: 1px solid #555; padding: 10px; border-radius: 5px; }
+
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; pointer-events: auto; }
+        .overlay.active { display: block; }
+
+        .cursor-mode { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: #8b008b; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; pointer-events: none; display: none; z-index: 200; border: 2px solid #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+        body.potion-cursor { cursor: crosshair; }
+
+        .blackhole-fx { position: absolute; border-radius: 50%; background: radial-gradient(circle, #000 30%, #4b0082 80%, transparent); opacity: 0.5; pointer-events: none; z-index: 2; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body>
+    <div class="ground"></div>
+    <div id="game-area"></div>
+
+    <div id="potion-indicator" class="cursor-mode">Potion Active (Cliquez sur une plante)</div>
+
+    <div id="ui-layer">
+        <div class="hud">
+            <div class="money">💰 <span id="money-display">50</span></div>
+            <button onclick="toggleModal('shop-modal')">🏪 Boutique</button>
+            <button onclick="toggleModal('lab-modal')">⚗️ Laboratoire</button>
+            <button onclick="toggleModal('contracts-modal')">📜 Contrats</button>
+        </div>
+        <div class="inventory-bar" id="inventory-bar"></div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="closeModals()"></div>
+
+    <!-- Shop Modal -->
+    <div class="modal" id="shop-modal">
+        <div class="modal-header"><h2>Boutique de l'Éveil</h2><button onclick="closeModals()">X</button></div>
+        <div class="shop-grid" id="shop-grid"></div>
+    </div>
+
+    <!-- Lab Modal -->
+    <div class="modal" id="lab-modal">
+        <div class="modal-header"><h2>Laboratoire d'Alchimie</h2><button onclick="closeModals()">X</button></div>
+        <div class="lab-area">
+            <p>Mélangez deux graines pour créer une potion. Attention aux compatibilités !</p>
+            <div class="lab-select">
+                <select id="lab-seed-1"><option value="">Sélectionner Graine 1</option></select>
+                <span>+</span>
+                <select id="lab-seed-2"><option value="">Sélectionner Graine 2</option></select>
+                <button onclick="mixPotion()" style="background: #8b008b;">Mélanger</button>
+            </div>
+            <div id="lab-result" style="text-align: center; font-weight: bold; color: #ff00ff; min-height: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Contracts Modal -->
+    <div class="modal" id="contracts-modal">
+        <div class="modal-header"><h2>Contrats de l'Éveil</h2><button onclick="closeModals()">X</button></div>
+        <div class="contracts-list" id="contracts-list"></div>
+    </div>
+
+    <script>
+        // 1. Définition des Graines (Les 10 premières de la liste de 50)
+        const SEED_DEFS = [
+    {
+        "id": "s1",
+        "name": "Pousse Simple",
+        "color": "hsl(35.431792689989706, 75.98702588336151%, 49.15154488211656%)",
+        "cost": 10,
+        "sell": 5,
+        "lifespan": 14343.587022357797,
+        "drops": [
+            10,
+            15
+        ],
+        "behavior": "none",
+        "exclusive": false
+    },
+    {
+        "id": "s2",
+        "name": "Herbe Dansante",
+        "color": "hsl(232.94380192267187, 78.55025093282333%, 54.30565697828433%)",
+        "cost": 25,
+        "sell": 12,
+        "lifespan": 13063.086161093026,
+        "drops": [
+            10,
+            15
+        ],
+        "behavior": "dance",
+        "exclusive": false
+    },
+    {
+        "id": "s3",
+        "name": "Pousse Couarde",
+        "color": "hsl(194.41982796275107, 90.0771522226969%, 78.68584078771417%)",
+        "cost": 63,
+        "sell": 28,
+        "lifespan": 13304.140242890093,
+        "drops": [
+            9,
+            15
+        ],
+        "behavior": "hide",
+        "exclusive": false
+    },
+    {
+        "id": "s4",
+        "name": "Liane Voyageuse",
+        "color": "hsl(2.1865145988385937, 74.69511976682455%, 57.42938649047288%)",
+        "cost": 156,
+        "sell": 67,
+        "lifespan": 10752.328301474103,
+        "drops": [
+            9,
+            15
+        ],
+        "behavior": "move",
+        "exclusive": false
+    },
+    {
+        "id": "s5",
+        "name": "Ronce Parasite",
+        "color": "hsl(271.49687860541405, 71.43328553571887%, 58.621495850848966%)",
+        "cost": 391,
+        "sell": 159,
+        "lifespan": 11371.736095701715,
+        "drops": [
+            8,
+            14
+        ],
+        "behavior": "parasite",
+        "exclusive": false
+    },
+    {
+        "id": "s6",
+        "name": "Bourgeon Attractif",
+        "color": "hsl(213.71942489804783, 80.03974682058625%, 69.25251233169305%)",
+        "cost": 977,
+        "sell": 378,
+        "lifespan": 8665.95890405386,
+        "drops": [
+            8,
+            14
+        ],
+        "behavior": "magnet",
+        "exclusive": false
+    },
+    {
+        "id": "s7",
+        "name": "Fleur Ombre",
+        "color": "hsl(348.7600203387129, 79.18760133397865%, 52.6457829501166%)",
+        "cost": 2441,
+        "sell": 897,
+        "lifespan": 16578.103641998918,
+        "drops": [
+            7,
+            14
+        ],
+        "behavior": "shadow",
+        "exclusive": false
+    },
+    {
+        "id": "s8",
+        "name": "Cristalline Piquante",
+        "color": "hsl(117.64901633961222, 94.57914571583737%, 40.21450287281346%)",
+        "cost": 6104,
+        "sell": 2131,
+        "lifespan": 11115.784741778029,
+        "drops": [
+            7,
+            13
+        ],
+        "behavior": "explode",
+        "exclusive": false
+    },
+    {
+        "id": "s9",
+        "name": "Orgueil Doré",
+        "color": "hsl(314.53173837186523, 72.86794550300795%, 76.56259622101672%)",
+        "cost": 15259,
+        "sell": 5062,
+        "lifespan": 14475.506533444284,
+        "drops": [
+            6,
+            13
+        ],
+        "behavior": "giant_low_drop",
+        "exclusive": false
+    },
+    {
+        "id": "s10",
+        "name": "Singularité",
+        "color": "hsl(107.49139439316792, 82.15979649707945%, 66.59469845760039%)",
+        "cost": 38147,
+        "sell": 12021,
+        "lifespan": 8299.168872588307,
+        "drops": [
+            6,
+            13
+        ],
+        "behavior": "blackhole",
+        "exclusive": false
+    },
+    {
+        "id": "s11",
+        "name": "Fleur de Feu",
+        "color": "hsl(351.95772487952445, 94.6329536320815%, 48.452149004180214%)",
+        "cost": 95367,
+        "sell": 28550,
+        "lifespan": 5847.046820251529,
+        "drops": [
+            5,
+            13
+        ],
+        "behavior": "none",
+        "exclusive": false
+    },
+    {
+        "id": "s12",
+        "name": "Cristal de Givre",
+        "color": "hsl(68.20943505253753, 84.98052807236537%, 60.00359921378354%)",
+        "cost": 238419,
+        "sell": 67806,
+        "lifespan": 6542.425566642979,
+        "drops": [
+            5,
+            12
+        ],
+        "behavior": "dance",
+        "exclusive": false
+    },
+    {
+        "id": "s13",
+        "name": "Racine Hurlante",
+        "color": "hsl(262.57509306825483, 73.59064010371227%, 75.48601759652732%)",
+        "cost": 596046,
+        "sell": 161040,
+        "lifespan": 18137.89805534794,
+        "drops": [
+            4,
+            12
+        ],
+        "behavior": "hide",
+        "exclusive": false
+    },
+    {
+        "id": "s14",
+        "name": "Tige de Fer",
+        "color": "hsl(185.80071808968927, 81.04959688747687%, 72.85613551872993%)",
+        "cost": 1490116,
+        "sell": 382470,
+        "lifespan": 5536.512470416854,
+        "drops": [
+            4,
+            12
+        ],
+        "behavior": "move",
+        "exclusive": false
+    },
+    {
+        "id": "s15",
+        "name": "Liane Électrique",
+        "color": "hsl(18.061173362696934, 92.75508086882023%, 41.73241983959738%)",
+        "cost": 3725290,
+        "sell": 908365,
+        "lifespan": 6922.464216742691,
+        "drops": [
+            3,
+            11
+        ],
+        "behavior": "parasite",
+        "exclusive": false
+    },
+    {
+        "id": "s16",
+        "name": "Lotus Sanguin",
+        "color": "hsl(108.3325939873029, 93.52227799821833%, 50.275501095695994%)",
+        "cost": 9313226,
+        "sell": 2157368,
+        "lifespan": 11247.025531986059,
+        "drops": [
+            3,
+            11
+        ],
+        "behavior": "magnet",
+        "exclusive": false
+    },
+    {
+        "id": "s17",
+        "name": "Orchidée Fantôme",
+        "color": "hsl(289.26027842511996, 73.25037116091542%, 50.30446335644666%)",
+        "cost": 23283064,
+        "sell": 5123749,
+        "lifespan": 12682.048408307503,
+        "drops": [
+            2,
+            11
+        ],
+        "behavior": "shadow",
+        "exclusive": false
+    },
+    {
+        "id": "s18",
+        "name": "Cactus Émeraude",
+        "color": "hsl(298.8492001914809, 81.897360786608%, 66.05094953878535%)",
+        "cost": 58207661,
+        "sell": 12168903,
+        "lifespan": 18556.35489607796,
+        "drops": [
+            2,
+            11
+        ],
+        "behavior": "explode",
+        "exclusive": false
+    },
+    {
+        "id": "s19",
+        "name": "Rose des Vents",
+        "color": "hsl(291.38538370509855, 92.31532664065834%, 65.09034547588983%)",
+        "cost": 145519152,
+        "sell": 28901145,
+        "lifespan": 10720.408852291832,
+        "drops": [
+            1,
+            10
+        ],
+        "behavior": "giant_low_drop",
+        "exclusive": false
+    },
+    {
+        "id": "s20",
+        "name": "Tulipe d'Obsidienne",
+        "color": "hsl(125.03765778306733, 77.21637613424423%, 60.44558956551448%)",
+        "cost": 363797881,
+        "sell": 68640220,
+        "lifespan": 19152.924968652787,
+        "drops": [
+            1,
+            10
+        ],
+        "behavior": "blackhole",
+        "exclusive": false
+    },
+    {
+        "id": "s21",
+        "name": "Graine Tempête",
+        "color": "hsl(251.814268869525, 72.46324900010381%, 66.5715315212538%)",
+        "cost": 909494702,
+        "sell": 163020524,
+        "lifespan": 13423.291785578414,
+        "drops": [
+            1,
+            10
+        ],
+        "behavior": "none",
+        "exclusive": false
+    },
+    {
+        "id": "s22",
+        "name": "Bourgeon Sombre",
+        "color": "hsl(231.62276054376875, 71.4237313995409%, 58.85222345974302%)",
+        "cost": 2273736754,
+        "sell": 387173743,
+        "lifespan": 6008.715147936542,
+        "drops": [
+            1,
+            9
+        ],
+        "behavior": "dance",
+        "exclusive": false
+    },
+    {
+        "id": "s23",
+        "name": "Lys Solaire",
+        "color": "hsl(348.48665506139054, 86.7670944232915%, 56.449842779191364%)",
+        "cost": 5684341886,
+        "sell": 919537641,
+        "lifespan": 10020.182793928707,
+        "drops": [
+            1,
+            9
+        ],
+        "behavior": "hide",
+        "exclusive": false
+    },
+    {
+        "id": "s24",
+        "name": "Pétale Lunaire",
+        "color": "hsl(204.3473201163983, 97.98439919287038%, 74.86542047461162%)",
+        "cost": 14210854715,
+        "sell": 2183901896,
+        "lifespan": 14669.707861563129,
+        "drops": [
+            1,
+            9
+        ],
+        "behavior": "move",
+        "exclusive": false
+    },
+    {
+        "id": "s25",
+        "name": "Fleur Toxique",
+        "color": "hsl(221.17246215200092, 70.88332026897233%, 51.97379034820343%)",
+        "cost": 35527136788,
+        "sell": 5186767004,
+        "lifespan": 14414.231634088726,
+        "drops": [
+            1,
+            9
+        ],
+        "behavior": "parasite",
+        "exclusive": false
+    },
+    {
+        "id": "s26",
+        "name": "Ronce d'Acier",
+        "color": "hsl(29.383190878274554, 85.51025338583409%, 70.37512456717744%)",
+        "cost": 88817841970,
+        "sell": 12318571635,
+        "lifespan": 19042.60634618439,
+        "drops": [
+            1,
+            8
+        ],
+        "behavior": "magnet",
+        "exclusive": false
+    },
+    {
+        "id": "s27",
+        "name": "Lierre Épineux",
+        "color": "hsl(94.43034123993512, 86.91275562438426%, 60.74155494180603%)",
+        "cost": 222044604925,
+        "sell": 29256607633,
+        "lifespan": 5716.20362462369,
+        "drops": [
+            1,
+            8
+        ],
+        "behavior": "shadow",
+        "exclusive": false
+    },
+    {
+        "id": "s28",
+        "name": "Jacinthe d'Eau",
+        "color": "hsl(327.74977889458137, 82.73731185494056%, 63.04023785206971%)",
+        "cost": 555111512313,
+        "sell": 69484443128,
+        "lifespan": 15404.486011257572,
+        "drops": [
+            1,
+            8
+        ],
+        "behavior": "explode",
+        "exclusive": false
+    },
+    {
+        "id": "s29",
+        "name": "Coquelicot Géant",
+        "color": "hsl(298.7542661146358, 98.59927381297663%, 61.34151296540142%)",
+        "cost": 1387778780781,
+        "sell": 165025552428,
+        "lifespan": 14111.803596201591,
+        "drops": [
+            1,
+            7
+        ],
+        "behavior": "giant_low_drop",
+        "exclusive": false
+    },
+    {
+        "id": "s30",
+        "name": "Iris Céleste",
+        "color": "hsl(289.92395771936197, 81.38474418632958%, 65.56230568474754%)",
+        "cost": 3469446951954,
+        "sell": 391935687017,
+        "lifespan": 12194.61212258847,
+        "drops": [
+            1,
+            7
+        ],
+        "behavior": "blackhole",
+        "exclusive": false
+    },
+    {
+        "id": "s31",
+        "name": "Fougère Ancienne",
+        "color": "hsl(32.624450949916266, 83.32606235942822%, 71.37291279253577%)",
+        "cost": 8673617379884,
+        "sell": 930847256666,
+        "lifespan": 15980.784907710007,
+        "drops": [
+            1,
+            7
+        ],
+        "behavior": "none",
+        "exclusive": false
+    },
+    {
+        "id": "s32",
+        "name": "Baobab Nain",
+        "color": "hsl(227.4307174000134, 75.97252186620182%, 56.42231453845274%)",
+        "cost": 21684043449710,
+        "sell": 2210762234582,
+        "lifespan": 18828.8880320948,
+        "drops": [
+            1,
+            7
+        ],
+        "behavior": "dance",
+        "exclusive": false
+    },
+    {
+        "id": "s33",
+        "name": "Graine de Météore",
+        "color": "hsl(23.425832711849218, 87.52024765631735%, 46.446493499149604%)",
+        "cost": 54210108624275,
+        "sell": 5250560307132,
+        "lifespan": 13137.625833968581,
+        "drops": [
+            1,
+            6
+        ],
+        "behavior": "hide",
+        "exclusive": false
+    },
+    {
+        "id": "s34",
+        "name": "Pousse de Lave",
+        "color": "hsl(148.01818910853962, 97.38401307795615%, 70.86148868195757%)",
+        "cost": 135525271560688,
+        "sell": 12470080729440,
+        "lifespan": 16174.806188318867,
+        "drops": [
+            1,
+            6
+        ],
+        "behavior": "move",
+        "exclusive": false
+    },
+    {
+        "id": "s35",
+        "name": "Herbe de Cristal",
+        "color": "hsl(273.0711818105421, 71.93064484115189%, 45.46637506536495%)",
+        "cost": 338813178901720,
+        "sell": 29616441732419,
+        "lifespan": 7101.283790648229,
+        "drops": [
+            1,
+            6
+        ],
+        "behavior": "parasite",
+        "exclusive": false
+    },
+    {
+        "id": "s36",
+        "name": "Artefact Botanique",
+        "color": "hsl(86.67110980571013, 92.00154416857717%, 74.64603117919313%)",
+        "cost": 847032947254300,
+        "sell": 70339049114495,
+        "lifespan": 18892.31302151556,
+        "drops": [
+            1,
+            5
+        ],
+        "behavior": "magnet",
+        "exclusive": true
+    },
+    {
+        "id": "s37",
+        "name": "Graine Stellaire",
+        "color": "hsl(170.50035756902562, 80.64975312129535%, 71.00129078539203%)",
+        "cost": 2117582368135751,
+        "sell": 167055241646926,
+        "lifespan": 9511.834654502582,
+        "drops": [
+            1,
+            5
+        ],
+        "behavior": "shadow",
+        "exclusive": true
+    },
+    {
+        "id": "s38",
+        "name": "Racine du Néant",
+        "color": "hsl(285.7193434695829, 98.8133744701884%, 57.741061737229906%)",
+        "cost": 5293955920339377,
+        "sell": 396756198911450,
+        "lifespan": 16099.127930764775,
+        "drops": [
+            1,
+            5
+        ],
+        "behavior": "explode",
+        "exclusive": true
+    },
+    {
+        "id": "s39",
+        "name": "Fleur Temporelle",
+        "color": "hsl(18.01293256608309, 93.4034018323744%, 78.36929438479291%)",
+        "cost": 13234889800848442,
+        "sell": 942295972414694,
+        "lifespan": 13215.446607647871,
+        "drops": [
+            1,
+            5
+        ],
+        "behavior": "giant_low_drop",
+        "exclusive": true
+    },
+    {
+        "id": "s40",
+        "name": "Lotus Noir",
+        "color": "hsl(354.86322741777735, 86.21847025166635%, 72.37691747106643%)",
+        "cost": 33087224502121110,
+        "sell": 2237952934484897,
+        "lifespan": 7061.925649551542,
+        "drops": [
+            1,
+            4
+        ],
+        "behavior": "blackhole",
+        "exclusive": true
+    },
+    {
+        "id": "s41",
+        "name": "Orchidée Primordiale",
+        "color": "hsl(225.63657611848964, 71.59411749126535%, 71.46866985710167%)",
+        "cost": 82718061255302770,
+        "sell": 5315138219401630,
+        "lifespan": 18327.571429798918,
+        "drops": [
+            1,
+            4
+        ],
+        "behavior": "none",
+        "exclusive": true
+    },
+    {
+        "id": "s42",
+        "name": "Rose de Cristal",
+        "color": "hsl(332.75278082010345, 94.17249950140364%, 53.32347139012874%)",
+        "cost": 206795153138256930,
+        "sell": 12623453271078870,
+        "lifespan": 6586.477459013974,
+        "drops": [
+            1,
+            4
+        ],
+        "behavior": "dance",
+        "exclusive": true
+    },
+    {
+        "id": "s43",
+        "name": "Bourgeon Divin",
+        "color": "hsl(182.43350653622716, 79.93218710288042%, 57.2960697821497%)",
+        "cost": 516987882845642240,
+        "sell": 29980701518812310,
+        "lifespan": 5783.384231719455,
+        "drops": [
+            1,
+            3
+        ],
+        "behavior": "hide",
+        "exclusive": true
+    },
+    {
+        "id": "s44",
+        "name": "Liane Dimensionnelle",
+        "color": "hsl(15.10776377942931, 74.3807630590741%, 77.10490589314729%)",
+        "cost": 1292469707114105900,
+        "sell": 71204166107179256,
+        "lifespan": 18371.588300264426,
+        "drops": [
+            1,
+            3
+        ],
+        "behavior": "move",
+        "exclusive": true
+    },
+    {
+        "id": "s45",
+        "name": "Tige Cosmos",
+        "color": "hsl(219.74941844766354, 70.04609633357083%, 75.92077005219926%)",
+        "cost": 3231174267785264600,
+        "sell": 169109894504550720,
+        "lifespan": 19761.564348102576,
+        "drops": [
+            1,
+            3
+        ],
+        "behavior": "parasite",
+        "exclusive": true
+    },
+    {
+        "id": "s46",
+        "name": "Fleur d'Ombre Pure",
+        "color": "hsl(225.05479183253294, 93.04999097259147%, 62.16452556450633%)",
+        "cost": 8077935669463161000,
+        "sell": 401635999448307900,
+        "lifespan": 15718.899365872208,
+        "drops": [
+            1,
+            3
+        ],
+        "behavior": "magnet",
+        "exclusive": true
+    },
+    {
+        "id": "s47",
+        "name": "Graine d'Éternité",
+        "color": "hsl(278.56105279651314, 84.71570033698988%, 42.23056654928749%)",
+        "cost": 20194839173657903000,
+        "sell": 953885498689731200,
+        "lifespan": 10121.529954959471,
+        "drops": [
+            1,
+            2
+        ],
+        "behavior": "shadow",
+        "exclusive": true
+    },
+    {
+        "id": "s48",
+        "name": "Pétale Chaos",
+        "color": "hsl(231.13234477178852, 73.61809586064066%, 68.93371112056269%)",
+        "cost": 50487097934144760000,
+        "sell": 2265478059388112000,
+        "lifespan": 11597.173526353006,
+        "drops": [
+            1,
+            2
+        ],
+        "behavior": "explode",
+        "exclusive": true
+    },
+    {
+        "id": "s49",
+        "name": "Lys de l'Aube",
+        "color": "hsl(55.3463766226481, 94.65936730434035%, 62.73096271416982%)",
+        "cost": 126217744835361900000,
+        "sell": 5380510391046766000,
+        "lifespan": 12374.22450539341,
+        "drops": [
+            1,
+            2
+        ],
+        "behavior": "giant_low_drop",
+        "exclusive": true
+    },
+    {
+        "id": "s50",
+        "name": "Singularité Absolue",
+        "color": "hsl(288.2521588204936, 84.74305439177364%, 54.778089218322776%)",
+        "cost": 315544362088404750000,
+        "sell": 12778712178736067000,
+        "lifespan": 7424.581122356092,
+        "drops": [
+            1,
+            2
+        ],
+        "behavior": "blackhole",
+        "exclusive": true
+    }
+];
+
+
+
+        // 2. État du Jeu
+        let money = 50;
+        let inventory = { 's1': 5 };
+        let selectedSeedId = 's1';
+        let activePotion = null; // Type de potion active
+
+        let plants = [];
+        let droppedSeeds = [];
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+
+        let contracts = [
+            { id: 1, text: "Livraison Locale: 10 Pousses Simples", req: 's1', reqAmt: 10, reward: 100, done: false },
+            { id: 2, text: "Danse Macabre: 5 Herbes Dansantes", req: 's2', reqAmt: 5, reward: 500, done: false },
+            { id: 3, text: "Le Secret des Vents: 5 Roses des Vents", req: 's19', reqAmt: 5, reward: 150000, done: false, unlocks: 's36' },
+            { id: 4, text: "L'Ombre Ultime: 2 Singularités", req: 's10', reqAmt: 2, reward: 50000, done: false, unlocks: 's40' },
+            { id: 5, text: "Sacrifice Élémentaire: 10 Graines de Météore", req: 's33', reqAmt: 10, reward: 1000000, done: false, unlocks: 's50' }
+        ];
+
+        const gameArea = document.getElementById('game-area');
+
+        // Initialisation UI
+        updateUI();
+
+        // Écouteurs globaux
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        gameArea.addEventListener('click', (e) => {
+            if(e.target.closest('.dropped-seed') || e.target.closest('.plant-wrapper')) return;
+
+            // Si on a une potion, on annule en cliquant dans le vide
+            if(activePotion) {
+                activePotion = null;
+                document.body.classList.remove('potion-cursor');
+                document.getElementById('potion-indicator').style.display = 'none';
+                return;
+            }
+
+            if(selectedSeedId && inventory[selectedSeedId] > 0) {
+                inventory[selectedSeedId]--;
+                plantSeed(e.clientX, selectedSeedId);
+                updateUI();
+            }
+        });
+
+        // 3. Moteur de Jeu (Game Loop)
+        let lastTime = performance.now();
+        function gameLoop(time) {
+            let dt = time - lastTime;
+            lastTime = time;
+
+            plants.forEach((p, index) => {
+                if(p.state === 'dead') return;
+
+                p.age += dt;
+
+                // Croissance
+                if(p.state === 'growing') {
+                    let progress = Math.min(1, p.age / (p.def.lifespan * 0.3)); // Prend 30% du temps pour pousser
+                    p.elements.stem.style.height = (progress * p.maxHeight) + 'px';
+                    if(progress >= 1) {
+                        p.state = 'blooming';
+                        p.elements.wrapper.classList.add('bloomed');
+                    }
+                }
+                else if(p.state === 'blooming') {
+                    if(p.age >= p.def.lifespan * 0.8) {
+                        p.state = 'wilting';
+                        p.elements.wrapper.classList.remove('bloomed');
+                        p.elements.wrapper.classList.add('wilted');
+                    }
+                }
+                else if(p.state === 'wilting') {
+                    if(p.age >= p.def.lifespan) {
+                        diePlant(p);
+                    }
+                }
+
+                // --- Comportements Autonomes Radicaux ---
+                if(p.state !== 'seed' && p.state !== 'dead') {
+                    switch(p.def.behavior) {
+                        case 'dance':
+                            p.elements.stem.style.transform = `rotate(${Math.sin(time/200) * 20}deg)`;
+                            break;
+
+                        case 'hide':
+                            let dist = Math.abs(mouseX - p.x);
+                            if(dist < 100 && mouseY > window.innerHeight - 200) {
+                                p.elements.wrapper.classList.add('hide');
+                            } else {
+                                p.elements.wrapper.classList.remove('hide');
+                            }
+                            break;
+
+                        case 'move':
+                            p.x += Math.sin(time/1000) * 0.5; // Oscille de gauche à droite
+                            p.elements.wrapper.style.left = p.x + 'px';
+                            break;
+
+                        case 'parasite':
+                            // Aspire la vie des autres plantes proches (+age aux autres, -age à soi)
+                            plants.forEach(other => {
+                                if(other !== p && Math.abs(other.x - p.x) < 50 && other.state !== 'dead') {
+                                    other.age += dt * 0.5; // L'autre vieillit plus vite
+                                    p.age -= dt * 0.1; // Le parasite rajeunit
+                                }
+                            });
+                            break;
+
+                        case 'magnet':
+                            // Attire les graines droppées
+                            droppedSeeds.forEach(ds => {
+                                let dsDist = p.x - ds.x;
+                                if(Math.abs(dsDist) < 150) {
+                                    ds.x += Math.sign(dsDist) * 0.5;
+                                    ds.element.style.left = ds.x + 'px';
+                                }
+                            });
+                            break;
+
+                        case 'shadow':
+                            // Ne pousse que si proche d'une autre plante plus grande
+                            let shaded = plants.some(other => other !== p && Math.abs(other.x - p.x) < 30 && other.maxHeight > p.maxHeight);
+                            if(!shaded && p.state === 'growing') {
+                                p.age -= dt; // Stoppe la croissance
+                                p.elements.stem.style.opacity = '0.5';
+                            } else {
+                                p.elements.stem.style.opacity = '1';
+                            }
+                            break;
+
+                        case 'blackhole':
+                            // Gère le trou noir (détruit voisins)
+                            if(!p.bhFx) {
+                                p.bhFx = document.createElement('div');
+                                p.bhFx.className = 'blackhole-fx';
+                                p.bhFx.style.width = '200px'; p.bhFx.style.height = '200px';
+                                p.bhFx.style.left = p.x + 'px'; p.bhFx.style.top = (window.innerHeight - 80) + 'px';
+                                gameArea.appendChild(p.bhFx);
+                            }
+                            p.bhFx.style.transform = `translate(-50%, -50%) rotate(${time/10}deg)`;
+
+                            plants.forEach(other => {
+                                if(other !== p && Math.abs(other.x - p.x) < 100 && other.state !== 'dead') {
+                                    other.age = other.def.lifespan; // Tue instantanément
+                                    p.age -= 5000; // Boost massif
+                                }
+                            });
+                            break;
+                    }
+                }
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+
+        // 4. Logique de Plantation et Cycle
+        function plantSeed(x, seedId) {
+            const def = SEED_DEFS.find(s => s.id === seedId);
+            const groundY = window.innerHeight - 40;
+
+            // Animation de la graine qui tombe
+            const fallingSeed = document.createElement('div');
+            fallingSeed.className = 'falling-seed';
+            fallingSeed.style.width = '16px'; fallingSeed.style.height = '12px';
+            fallingSeed.style.background = def.color;
+            fallingSeed.style.left = x + 'px';
+            fallingSeed.style.top = mouseY + 'px'; // Commence à la souris
+            fallingSeed.style.transition = 'top 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53)';
+
+            gameArea.appendChild(fallingSeed);
+
+            // Déclenche la chute
+            setTimeout(() => {
+                fallingSeed.style.top = (groundY - 5) + 'px';
+            }, 50);
+
+            // Quand ça touche le sol, on fait pousser
+            setTimeout(() => {
+                fallingSeed.remove();
+                growPlant(x, def);
+            }, 850);
+        }
+
+        function growPlant(x, def) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'plant-wrapper';
+            wrapper.style.left = x + 'px';
+
+            if(def.behavior === 'giant_low_drop') wrapper.classList.add('giant');
+
+            const seedBase = document.createElement('div');
+            seedBase.className = 'seed-base';
+            seedBase.style.background = def.color;
+
+            const stem = document.createElement('div');
+            stem.className = 'stem';
+            stem.style.background = def.color;
+
+            const flower = document.createElement('div');
+            flower.className = 'flower';
+            flower.style.width = '30px'; flower.style.height = '30px';
+            flower.style.background = def.color;
+
+            wrapper.appendChild(seedBase);
+            wrapper.appendChild(stem);
+            wrapper.appendChild(flower);
+            gameArea.appendChild(wrapper);
+
+            const p = {
+                x: x, def: def, age: 0, state: 'growing',
+                maxHeight: 100 + Math.random() * 100,
+                elements: { wrapper, stem, flower, seedBase }
+            };
+
+            // Interaction Potion
+            wrapper.addEventListener('click', (e) => {
+                if(activePotion) {
+                    e.stopPropagation();
+                    applyPotion(p);
+                }
+            });
+
+            plants.push(p);
+        }
+
+        function diePlant(p) {
+            p.state = 'dead';
+            p.elements.wrapper.style.opacity = '0';
+            if(p.bhFx) p.bhFx.remove();
+
+            setTimeout(() => {
+                p.elements.wrapper.remove();
+                const currentIndex = plants.indexOf(p);
+                if (currentIndex > -1) {
+                    plants.splice(currentIndex, 1);
+                }
+            }, 1000);
+
+            // Rendement (Drop Rate avec probabilités pondérées)
+            let maxDrops = p.def.drops[1];
+            let minDrops = p.def.drops[0];
+
+            // Calcul exponentiel inversé pour les drops (difficile d'avoir max)
+            let r = Math.random();
+            let dropCount = minDrops;
+            // Fonction de répartition : r^2 favorise les petits nombres
+            dropCount = Math.floor(minDrops + Math.pow(r, 2) * (maxDrops - minDrops + 1));
+
+            // Orgueil Doré spécificité
+            if(p.def.behavior === 'giant_low_drop') dropCount = Math.min(2, dropCount);
+
+            // Application des Potions
+            if(p.forceMaxDrops) dropCount = maxDrops;
+            if(p.forceZeroDrops) dropCount = 0;
+
+            let stemHeight = p.elements.stem.offsetHeight || 100;
+            for(let i=0; i<dropCount; i++) {
+                spawnDrop(p.x, p.def, stemHeight);
+            }
+        }
+
+        function spawnDrop(x, def, startHeight) {
+            const groundY = window.innerHeight - 40;
+            const drop = document.createElement('div');
+            drop.className = 'dropped-seed';
+            drop.style.width = '16px'; drop.style.height = '12px'; // Plus grosse pour visibilité
+            drop.style.background = def.color;
+
+            // Dispersion
+            let startX = x + (Math.random() - 0.5) * 20;
+            let endX = x + (Math.random() - 0.5) * 100;
+
+            // Si c'est Cristalline Piquante, explosion
+            if(def.behavior === 'explode') endX = x + (Math.random() - 0.5) * 400;
+
+            drop.style.left = startX + 'px';
+            // Tombe depuis la hauteur de la fleur (-40 correspond à la hauteur du sol, on soustrait la tige)
+            drop.style.top = (groundY - startHeight) + 'px';
+            gameArea.appendChild(drop);
+
+            let ds = { element: drop, x: endX };
+            droppedSeeds.push(ds);
+
+            setTimeout(() => {
+                drop.style.transition = 'all 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53)'; // Physique de chute
+                drop.style.left = endX + 'px';
+                // La graine atterrit exactement SUR le sol (12px de hauteur / 2 + un petit décalage = -12px par rapport à groundY)
+                drop.style.top = (groundY - 12) + 'px';
+            }, 50);
+
+            drop.addEventListener('click', (e) => {
+                e.stopPropagation();
+                collectDrop(ds, def.id);
+            });
+
+            setTimeout(() => {
+                if(drop.parentNode) collectDrop(ds, null); // Despawn without collection
+            }, 15000);
+        }
+
+        function collectDrop(ds, id) {
+            if(ds.element.parentNode) ds.element.remove();
+            droppedSeeds = droppedSeeds.filter(d => d !== ds);
+            if(id) {
+                inventory[id] = (inventory[id] || 0) + 1;
+                updateUI();
+            }
+        }
+
+        // 5. Laboratoire d'Alchimie
+        function mixPotion() {
+            let s1 = document.getElementById('lab-seed-1').value;
+            let s2 = document.getElementById('lab-seed-2').value;
+            let res = document.getElementById('lab-result');
+
+            if(!s1 || !s2) { res.innerText = "Sélectionnez 2 graines."; return; }
+            if(inventory[s1] < 1 || inventory[s2] < 1) { res.innerText = "Graines insuffisantes."; return; }
+            if(s1 === s2 && inventory[s1] < 2) { res.innerText = "Graines insuffisantes."; return; }
+
+            inventory[s1]--;
+            if(s1 !== s2) inventory[s2]--; // Avoid double deduction if same
+            else if(s1 === s2) inventory[s2]--;
+
+            // Recettes Refonte (Bonus/Malus basés sur compatibilité)
+            let def1 = SEED_DEFS.find(s => s.id === s1);
+            let def2 = SEED_DEFS.find(s => s.id === s2);
+
+            let pType = '';
+
+            // Si même comportement ou famille (couleur proche), BONUS. Sinon MALUS
+            let isCompatible = def1.behavior === def2.behavior;
+            if(!isCompatible && Math.abs(parseInt(def1.id.replace('s','')) - parseInt(def2.id.replace('s',''))) < 5) {
+                isCompatible = true; // Proches dans la liste = compatibles
+            }
+
+            if(isCompatible) {
+                pType = 'bonus_abondance'; // Force max drops
+                res.innerText = "Potion d'Abondance (Bonus) créée ! Cliquez sur une plante.";
+                res.style.color = "#4CAF50";
+            } else if (s1 === 's9' || s2 === 's9' || s1 === 's10' || s2 === 's10') {
+                pType = 'mutation'; // Singularité / Orgueil doré = Mutation
+                res.innerText = "Potion de Mutation ! Transforme la plante.";
+                res.style.color = "#FF9800";
+            } else {
+                pType = 'malus_destruction'; // Incompatible = Destruction et 0 drops
+                res.innerText = "Combinaison Instable (Malus) ! Détruit la plante.";
+                res.style.color = "#F44336";
+            }
+
+            activePotion = pType;
+            document.body.classList.add('potion-cursor');
+            document.getElementById('potion-indicator').style.display = 'block';
+            document.getElementById('potion-indicator').innerText = `Potion Active : ${pType}`;
+
+            updateUI();
+            setTimeout(closeModals, 1500);
+        }
+
+        function applyPotion(p) {
+            if(activePotion === 'bonus_abondance') {
+                // Force le drop au max
+                p.forceMaxDrops = true;
+                p.elements.flower.style.boxShadow = "0 0 20px #4CAF50";
+            }
+            else if(activePotion === 'malus_destruction') {
+                p.age = p.def.lifespan; // Tue
+                p.forceZeroDrops = true;
+            }
+            else if(activePotion === 'mutation') {
+                // Transforme en une graine aléatoire de rang supérieur (jusqu'à exclusives)
+                let currentIdNum = parseInt(p.def.id.replace('s', ''));
+                let nextId = `s${Math.min(50, currentIdNum + Math.floor(Math.random() * 5 + 1))}`;
+                let newDef = SEED_DEFS.find(s => s.id === nextId);
+                if(newDef) {
+                    p.def = newDef;
+                    p.elements.stem.style.background = newDef.color;
+                    p.elements.flower.style.background = newDef.color;
+                    p.elements.flower.style.boxShadow = "0 0 20px #FF9800";
+                }
+            }
+
+            activePotion = null;
+            document.body.classList.remove('potion-cursor');
+            document.getElementById('potion-indicator').style.display = 'none';
+        }
+
+        // 6. Contrats
+        function deliverContract(id) {
+            let c = contracts.find(x => x.id === id);
+            if(c && !c.done && inventory[c.req] >= c.reqAmt) {
+                inventory[c.req] -= c.reqAmt;
+                money += c.reward;
+                c.done = true;
+
+                if(c.unlocks) {
+                    let unlockDef = SEED_DEFS.find(s => s.id === c.unlocks);
+                    if(unlockDef) unlockDef.exclusive = false; // Rendre achetable !
+                    alert(`Récompense exclusive débloquée dans la boutique : ${unlockDef.name} !`);
+                }
+
+                updateUI();
+            }
+        }
+
+        // 7. UI Management
+        function updateUI() {
+            document.getElementById('money-display').innerText = money;
+
+            // Inventory
+            const bar = document.getElementById('inventory-bar');
+            bar.innerHTML = '';
+            let hasSelection = false;
+
+            Object.keys(inventory).forEach(id => {
+                if(inventory[id] > 0) {
+                    let def = SEED_DEFS.find(s => s.id === id);
+                    if(id === selectedSeedId) hasSelection = true;
+
+                    bar.innerHTML += `
+                        <div class="inventory-item ${id === selectedSeedId ? 'selected' : ''}" onclick="selectSeed('${id}', event)">
+                            <div class="inv-seed-icon" style="background:${def.color};"></div>
+                            <div class="inv-count">${inventory[id]}</div>
+                        </div>
+                    `;
+                }
+            });
+            if(!hasSelection) selectedSeedId = null;
+
+            // Shop
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+            SEED_DEFS.forEach(def => {
+                if(def.exclusive) return; // Hide exclusive seeds from shop
+                let owned = inventory[def.id] || 0;
+                grid.innerHTML += `
+                    <div class="shop-item">
+                        <div style="width:30px; height:30px; background:${def.color}; border-radius:50%; margin:0 auto 10px;"></div>
+                        <h4>${def.name}</h4>
+                        <p style="font-size:0.8em; color:#aaa;">${getBehaviorText(def.behavior)}</p>
+                        <p style="font-size:0.9em; margin:5px 0;">Possédé: ${owned}</p>
+                        <div class="shop-actions">
+                            <button onclick="buy('${def.id}')" ${money < def.cost ? 'disabled' : ''}>Acheter (${def.cost}💰)</button>
+                            <button onclick="sell('${def.id}')" ${owned === 0 ? 'disabled' : ''}>Vendre (${def.sell}💰)</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Lab selects
+            let labOptions = '<option value="">Sélectionner</option>';
+            Object.keys(inventory).forEach(id => {
+                if(inventory[id] > 0) {
+                    let def = SEED_DEFS.find(s => s.id === id);
+                    labOptions += `<option value="${id}">${def.name} (${inventory[id]})</option>`;
+                }
+            });
+            document.getElementById('lab-seed-1').innerHTML = labOptions;
+            document.getElementById('lab-seed-2').innerHTML = labOptions;
+
+            // Contracts
+            const cList = document.getElementById('contracts-list');
+            cList.innerHTML = '';
+            contracts.forEach(c => {
+                let def = SEED_DEFS.find(s => s.id === c.req);
+                let owned = inventory[c.req] || 0;
+                let canDeliver = owned >= c.reqAmt && !c.done;
+
+                cList.innerHTML += `
+                    <div class="contract" style="opacity: ${c.done ? '0.5' : '1'}">
+                        <div>
+                            <h4>${c.text}</h4>
+                            <p style="margin:5px 0; font-size:0.9em;">Récompense: ${c.reward} 💰 | Progression: ${owned}/${c.reqAmt} ${def.name}</p>
+                        </div>
+                        <button onclick="deliverContract(${c.id})" ${!canDeliver ? 'disabled' : ''} style="background: ${c.done ? '#4CAF50' : '#2196F3'}">
+                            ${c.done ? 'Complété' : 'Livrer'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function getBehaviorText(b) {
+            const txts = {
+                'none': 'Plante classique.',
+                'dance': 'Danse au vent.',
+                'hide': 'Se cache de la souris.',
+                'move': 'Se déplace lentement.',
+                'parasite': 'Aspire la vie des voisins.',
+                'magnet': 'Attire les graines tombées.',
+                'shadow': 'Ne pousse qu\'à l\'ombre.',
+                'explode': 'Graines explosives.',
+                'giant_low_drop': 'Géante mais max 2 graines.',
+                'blackhole': 'Détruit voisins pour croître.'
+            };
+            return txts[b] || '';
+        }
+
+        function selectSeed(id, e) {
+            e.stopPropagation();
+            selectedSeedId = id;
+            updateUI();
+        }
+
+        window.buy = function(id) {
+            let def = SEED_DEFS.find(s => s.id === id);
+            if(money >= def.cost) {
+                money -= def.cost;
+                inventory[id] = (inventory[id] || 0) + 1;
+                updateUI();
+            }
+        };
+
+        window.sell = function(id) {
+            if(inventory[id] > 0) {
+                let def = SEED_DEFS.find(s => s.id === id);
+                money += def.sell;
+                inventory[id]--;
+                updateUI();
+            }
+        };
+
+        window.toggleModal = function(id) {
+            updateUI();
+            document.getElementById(id).classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+        };
+
+        window.closeModals = function() {
+            document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+            document.getElementById('overlay').classList.remove('active');
+            document.getElementById('lab-result').innerText = '';
+        };
+
+    </script>
+</body>
+</html>
