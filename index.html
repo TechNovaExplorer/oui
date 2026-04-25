@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr" class="bg-slate-900 text-white">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Maintenance Manager</title>
+
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="selection:bg-indigo-500/30">
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        const TARGET_GOAL = 30000;
+        const STOCK_CAPITAL_LIMIT = 1000;
+
+        // Icons components
+        const ActivityIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        );
+
+        const DollarSignIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        );
+
+        const TargetIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        );
+
+        const TrendingUpIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        );
+
+        const AlertTriangleIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        );
+
+        const ClockIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        );
+
+        function App() {
+            const [capital] = useState(5000);
+            const [totalProfit] = useState(2500);
+            const [velocity] = useState(150);
+
+            const [lines, setLines] = useState([
+                { id: 1, category: 'Manettes', avgBuy: 15, partsCost: 5, resale: 45, laborTime: 30 },
+                { id: 2, category: 'IoT', avgBuy: 20, partsCost: 10, resale: 80, laborTime: 45 },
+                { id: 3, category: 'Thermostats', avgBuy: 10, partsCost: 2, resale: 35, laborTime: 15 },
+            ]);
+
+            const [newLine, setNewLine] = useState({ category: 'Manettes', avgBuy: 0, partsCost: 0, resale: 0, laborTime: 0 });
+
+            const [stock] = useState([
+                { id: 1, name: 'Manette PS5 - Drift', category: 'Manettes', status: 'En attente', capital: 25 },
+                { id: 2, name: 'Thermostat Nest', category: 'Thermostats', status: 'En réparation', capital: 40 },
+                { id: 3, name: 'Capteur Température', category: 'IoT', status: 'Stock', capital: 15 },
+            ]);
+
+            const [logs] = useState([
+                { id: 1, action: 'Vente', item: 'Manette Xbox Elite', profit: 45, date: "24 avr. 16:00" },
+                { id: 2, action: 'Achat', item: 'Lot 5x Capteurs', profit: -25, date: "23 avr. 17:00" },
+            ]);
+
+            const currentStockCapital = stock.reduce((sum, item) => sum + item.capital, 0);
+            const isStockWarning = currentStockCapital > STOCK_CAPITAL_LIMIT;
+            const progress = Math.min((capital / TARGET_GOAL) * 100, 100);
+
+            const calculateRoti = (line) => {
+                if (line.laborTime === 0) return 0;
+                const netMargin = line.resale - (line.avgBuy + line.partsCost);
+                return netMargin / line.laborTime;
+            };
+
+            const handleAddLine = (e) => {
+                e.preventDefault();
+                setLines([...lines, { ...newLine, id: Date.now() }]);
+                setNewLine({ category: 'Manettes', avgBuy: 0, partsCost: 0, resale: 0, laborTime: 0 });
+            };
+
+            return (
+                <div className="min-h-screen p-4 sm:p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+                    {/* Header */}
+                    <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-slate-800">
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                                <ActivityIcon className="w-6 h-6 text-indigo-400" />
+                                Micro-Maintenance Manager
+                            </h1>
+                            <p className="text-slate-400 text-sm mt-1">Gestion de Flux et Rentabilité</p>
+                        </div>
+                    </header>
+
+                    {/* Dashboard */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold text-slate-200">Tableau de Bord</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
+                                <div className="flex items-center justify-between text-slate-400 mb-4">
+                                    <span className="text-sm font-medium">Capital Actuel</span>
+                                    <DollarSignIcon className="w-5 h-5" />
+                                </div>
+                                <div className="text-3xl font-bold tracking-tight">
+                                    {capital.toLocaleString('fr-FR')} €
+                                </div>
+                                <div className="mt-4 space-y-2">
+                                    <div className="flex justify-between text-xs text-slate-400">
+                                        <span>Progression Objectif</span>
+                                        <span>{TARGET_GOAL.toLocaleString('fr-FR')} €</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-700 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-right text-xs font-medium text-indigo-400">
+                                        {progress.toFixed(1)}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
+                                <div className="flex items-center justify-between text-slate-400 mb-4">
+                                    <span className="text-sm font-medium">Bénéfice Total</span>
+                                    <TargetIcon className="w-5 h-5 text-emerald-400" />
+                                </div>
+                                <div className="text-3xl font-bold tracking-tight text-emerald-400">
+                                    +{totalProfit.toLocaleString('fr-FR')} €
+                                </div>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50">
+                                <div className="flex items-center justify-between text-slate-400 mb-4">
+                                    <span className="text-sm font-medium">Vélocité (Bénéfice / Jour)</span>
+                                    <TrendingUpIcon className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <div className="text-3xl font-bold tracking-tight text-amber-400">
+                                    {velocity.toLocaleString('fr-FR')} €/j
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Line Manager & ROTI Calculator */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-semibold text-slate-200">Gestionnaire de Lignes & ROTI</h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 lg:col-span-1">
+                                <h3 className="text-sm font-medium text-slate-400 mb-4">Nouvelle Ligne</h3>
+                                <form onSubmit={handleAddLine} className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Catégorie</label>
+                                        <select
+                                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                                            value={newLine.category}
+                                            onChange={(e) => setNewLine({...newLine, category: e.target.value})}
+                                        >
+                                            <option>Manettes</option>
+                                            <option>IoT</option>
+                                            <option>Thermostats</option>
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Prix Achat (€)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                                                value={newLine.avgBuy}
+                                                onChange={(e) => setNewLine({...newLine, avgBuy: parseFloat(e.target.value) || 0})}
+                                                min="0" step="0.01"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Coût Pièces (€)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                                                value={newLine.partsCost}
+                                                onChange={(e) => setNewLine({...newLine, partsCost: parseFloat(e.target.value) || 0})}
+                                                min="0" step="0.01"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Prix Revente (€)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                                                value={newLine.resale}
+                                                onChange={(e) => setNewLine({...newLine, resale: parseFloat(e.target.value) || 0})}
+                                                min="0" step="0.01"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">Temps MO (min)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white"
+                                                value={newLine.laborTime}
+                                                onChange={(e) => setNewLine({...newLine, laborTime: parseInt(e.target.value) || 0})}
+                                                min="0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded text-sm transition-colors mt-2">
+                                        Ajouter Ligne
+                                    </button>
+                                </form>
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 lg:col-span-2 overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-700 text-xs text-slate-400 uppercase tracking-wider">
+                                            <th className="pb-3 font-medium">Catégorie</th>
+                                            <th className="pb-3 font-medium">Achat + Pièces</th>
+                                            <th className="pb-3 font-medium">Revente</th>
+                                            <th className="pb-3 font-medium">Temps</th>
+                                            <th className="pb-3 font-medium text-right">ROTI (€/min)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-sm">
+                                        {lines.map(line => {
+                                            const roti = calculateRoti(line);
+                                            return (
+                                                <tr key={line.id} className="border-b border-slate-700/50 last:border-0">
+                                                    <td className="py-3 font-medium text-slate-200">{line.category}</td>
+                                                    <td className="py-3 text-slate-400">{(line.avgBuy + line.partsCost).toFixed(2)} €</td>
+                                                    <td className="py-3 text-emerald-400">{line.resale.toFixed(2)} €</td>
+                                                    <td className="py-3 text-slate-400">{line.laborTime} min</td>
+                                                    <td className="py-3 text-right font-bold text-indigo-400">{roti.toFixed(2)}</td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Stock & Logs */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <section className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-lg font-semibold text-slate-200">Gestion de Stock</h2>
+                                {isStockWarning ? (
+                                    <div className="flex items-center gap-1.5 text-xs font-medium text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full">
+                                        <AlertTriangleIcon className="w-3.5 h-3.5" />
+                                        Limite Capital Tournant Atteinte
+                                    </div>
+                                ) : (
+                                    <div className="text-xs text-slate-400 font-medium">
+                                        Capital Tournant: {currentStockCapital}€ / {STOCK_CAPITAL_LIMIT}€
+                                    </div>
+                                )}
+                            </div>
+                            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+                                <ul className="divide-y divide-slate-700/50">
+                                    {stock.map(item => (
+                                        <li key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-700/20 transition-colors">
+                                            <div>
+                                                <p className="text-sm font-medium text-slate-200">{item.name}</p>
+                                                <p className="text-xs text-slate-400">{item.category} • {item.status}</p>
+                                            </div>
+                                            <div className="text-sm font-medium text-slate-300">
+                                                {item.capital} €
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section className="space-y-4">
+                            <h2 className="text-lg font-semibold text-slate-200">Journal d'Activité</h2>
+                            <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
+                                <ul className="divide-y divide-slate-700/50">
+                                    {logs.map(log => (
+                                        <li key={log.id} className="p-4 flex items-center justify-between hover:bg-slate-700/20 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-full ${log.profit > 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                    {log.profit > 0 ? <TrendingUpIcon className="w-4 h-4" /> : <ActivityIcon className="w-4 h-4" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-slate-200">{log.action}: {log.item}</p>
+                                                    <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+                                                        <ClockIcon className="w-3 h-3" />
+                                                        {log.date}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className={`text-sm font-bold ${log.profit > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                {log.profit > 0 ? '+' : ''}{log.profit} €
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
