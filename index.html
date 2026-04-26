@@ -90,8 +90,6 @@ const INITIAL_LINES = [
 ];
 
 const START_CAPITAL = 500;
-const REVOLVING_LIMIT = 1000;
-const GOAL = 30000;
 
 function App() {
   const [lines, setLines] = useState(INITIAL_LINES);
@@ -100,13 +98,18 @@ function App() {
   const [startDate] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000); // Mock started 30 days ago
   const [currentDate, setCurrentDate] = useState(() => Date.now());
 
+  // Configurable Settings
+  const [goal, setGoal] = useState(30000);
+  const [revolvingLimit, setRevolvingLimit] = useState(1000);
+  const [showSettings, setShowSettings] = useState(false);
+
   const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
   const daysActive = Math.max(1, Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24)));
   const velocity = totalProfit / daysActive;
-  const progressPercent = Math.min(100, (capital / GOAL) * 100);
+  const progressPercent = Math.min(100, (capital / goal) * 100);
 
   const tiedUpCapital = lines.reduce((sum, line) => sum + ((line.buyPrice + line.partsCost) * line.stock), 0);
-  const capitalLimitPercent = Math.min(100, (tiedUpCapital / REVOLVING_LIMIT) * 100);
+  const capitalLimitPercent = Math.min(100, (tiedUpCapital / revolvingLimit) * 100);
 
   const [isAddingLine, setIsAddingLine] = useState(false);
   const [newLineData, setNewLineData] = useState({
@@ -163,15 +166,52 @@ function App() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
-        <header className="flex items-center justify-between border-b border-zinc-800 pb-4">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800 pb-4 gap-4">
           <div className="flex items-center gap-3">
-            <Settings className="w-8 h-8 text-indigo-400" />
-            <h1 className="text-2xl font-bold tracking-tight">Micro-Maintenance OS</h1>
+            <Activity className="w-8 h-8 text-indigo-400" />
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Micro-Maintenance OS</h1>
+              <div className="text-zinc-400 text-sm">
+                Système de Gestion de Flux & Rentabilité
+              </div>
+            </div>
           </div>
-          <div className="text-zinc-400 text-sm">
-            Système de Gestion de Flux & Rentabilité
-          </div>
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-sm text-zinc-300 transition-colors self-start sm:self-auto"
+          >
+            <Settings className="w-4 h-4" />
+            Paramètres
+          </button>
         </header>
+
+        {showSettings && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Settings className="text-zinc-400 w-5 h-5" /> Paramètres Globaux
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Objectif Capital (€)</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-100"
+                  value={goal}
+                  onChange={(e) => setGoal(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Limite BFR (Capital Tournant €)</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-100"
+                  value={revolvingLimit}
+                  onChange={(e) => setRevolvingLimit(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
@@ -201,7 +241,7 @@ function App() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-400">Progression vers 30 000 €</span>
+                  <span className="text-zinc-400">Progression vers {goal} €</span>
                   <span className="font-mono">{progressPercent.toFixed(1)}%</span>
                 </div>
                 <div className="h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
@@ -351,7 +391,7 @@ function App() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-zinc-400">Limite Tournant</div>
-                    <div className="text-sm font-mono text-zinc-500">{REVOLVING_LIMIT.toFixed(2)} €</div>
+                    <div className="text-sm font-mono text-zinc-500">{revolvingLimit.toFixed(2)} €</div>
                   </div>
                 </div>
                 <div className="h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
