@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micro-Maintenance OS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        zinc: {
+                            850: '#202024',
+                            950: '#09090b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #09090b;
+            color: #f4f4f5;
+        }
+    </style>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="antialiased selection:bg-indigo-500/30">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+
+const { TrendingUp, Package, Settings, Activity, AlertTriangle, Clock, Euro, Plus, Wrench, Image, Check, List } = {
+  TrendingUp: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>,
+  Package: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>,
+  Settings: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>,
+  Activity: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
+  AlertTriangle: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+  Clock: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+  Euro: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h12"></path><path d="M4 14h9"></path><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"></path></svg>,
+  Plus: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
+  Wrench: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>,
+  Image: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>,
+  Check: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
+  List: ({className}) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+};
+
+
+
+// --- Types ---
+
+
+
+
+// --- Initial Data ---
+const INITIAL_LINES = [
+  {
+    id: '1',
+    name: 'Manettes (Ex: PS5 Drift)',
+    buyPrice: 0,
+    partsCost: 5,
+    sellPrice: 25,
+    laborTimeMinutes: 20,
+    stock: 3, // Finished goods stock
+  },
+  {
+    id: '2',
+    name: 'Thermostats Connectés',
+    buyPrice: 15,
+    partsCost: 0,
+    sellPrice: 45,
+    laborTimeMinutes: 15,
+    stock: 5,
+  },
+  {
+    id: '3',
+    name: 'Modules IoT',
+    buyPrice: 5,
+    partsCost: 2,
+    sellPrice: 20,
+    laborTimeMinutes: 10,
+    stock: 10,
+  }
+];
+
+const START_CAPITAL = 500;
+
+const INITIAL_SPARE_PARTS = [
+  { id: 'sp1', lineId: '1', name: 'Joystick 3D ALPS', cost: 2.5, stock: 10 },
+  { id: 'sp2', lineId: '1', name: 'Nappe L2/R2', cost: 1.5, stock: 5 },
+  { id: 'sp3', lineId: '2', name: 'Relais 5V', cost: 3.0, stock: 8 },
+];
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'interventions', 'parts'
+  const [lines, setLines] = useState(INITIAL_LINES);
+  const [sales, setSales] = useState([]);
+  const [spareParts, setSpareParts] = useState(INITIAL_SPARE_PARTS);
+  const [workOrders, setWorkOrders] = useState([]);
+  const [capital, setCapital] = useState(START_CAPITAL);
+  const [startDate] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000); // Mock started 30 days ago
+  const [currentDate, setCurrentDate] = useState(() => Date.now());
+
+  // Configurable Settings
+  const [goal, setGoal] = useState(30000);
+  const [revolvingLimit, setRevolvingLimit] = useState(1000);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const totalProfit = sales.reduce((sum, sale) => sum + sale.profit, 0);
+  const daysActive = Math.max(1, Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24)));
+  const velocity = totalProfit / daysActive;
+  const progressPercent = Math.min(100, (capital / goal) * 100);
+
+  const tiedUpCapital = lines.reduce((sum, line) => sum + ((line.buyPrice + line.partsCost) * line.stock), 0);
+  const capitalLimitPercent = Math.min(100, (tiedUpCapital / revolvingLimit) * 100);
+
+  const [isAddingLine, setIsAddingLine] = useState(false);
+  const [newLineData, setNewLineData] = useState({
+    name: '', buyPrice: 0, partsCost: 0, sellPrice: 0, laborTimeMinutes: 0, stock: 0
+  });
+
+  const [isAddingIntervention, setIsAddingIntervention] = useState(false);
+  const [newInterventionData, setNewInterventionData] = useState({
+    lineId: '', problem: '', photoUrl: ''
+  });
+
+  const handleAddLine = () => {
+    if (!newLineData.name) return;
+    const newLine = {
+      id: crypto.randomUUID(),
+      name: newLineData.name,
+      buyPrice: newLineData.buyPrice || 0,
+      partsCost: newLineData.partsCost || 0,
+      sellPrice: newLineData.sellPrice || 0,
+      laborTimeMinutes: newLineData.laborTimeMinutes || 0,
+      stock: newLineData.stock || 0
+    };
+    setLines(prev => [...prev, newLine]);
+    setIsAddingLine(false);
+    setNewLineData({ name: '', buyPrice: 0, partsCost: 0, sellPrice: 0, laborTimeMinutes: 0, stock: 0 });
+  };
+
+  const handleAddStock = (lineId) => {
+    setLines(prev => prev.map(l =>
+      l.id === lineId ? { ...l, stock: l.stock + 1 } : l
+    ));
+  };
+
+  const handleSimulateSale = (lineId) => {
+    const line = lines.find(l => l.id === lineId);
+    if (!line || line.stock <= 0) return;
+
+    const profit = line.sellPrice - (line.buyPrice + line.partsCost);
+
+    setLines(prev => prev.map(l =>
+      l.id === lineId ? { ...l, stock: l.stock - 1 } : l
+    ));
+
+    setCapital(prev => prev + line.sellPrice);
+
+    const newSale = {
+      id: crypto.randomUUID(),
+      lineId: line.id,
+      lineName: line.name,
+      profit: profit,
+      timestamp: Date.now()
+    };
+
+    setCurrentDate(newSale.timestamp);
+
+    setSales(prev => [newSale, ...prev]);
+  };
+
+  const handleAddIntervention = () => {
+    if (!newInterventionData.lineId || !newInterventionData.problem) return;
+    const newOrder = {
+      id: crypto.randomUUID(),
+      lineId: newInterventionData.lineId,
+      problem: newInterventionData.problem,
+      photoUrl: newInterventionData.photoUrl || 'https://images.unsplash.com/photo-1590845947376-28be3dd771d9?auto=format&fit=crop&w=400&q=80',
+      status: 'pending', // pending, working, done
+      partsUsed: []
+    };
+    setWorkOrders(prev => [newOrder, ...prev]);
+    setIsAddingIntervention(false);
+    setNewInterventionData({ lineId: '', problem: '', photoUrl: '' });
+  };
+
+  const handleConsumePart = (orderId, partId) => {
+    // 1. Check if part is in stock
+    const part = spareParts.find(p => p.id === partId);
+    if (!part || part.stock <= 0) return;
+
+    // 2. Decrement stock
+    setSpareParts(prev => prev.map(p =>
+      p.id === partId ? { ...p, stock: p.stock - 1 } : p
+    ));
+
+    // 3. Add to work order
+    setWorkOrders(prev => prev.map(order => {
+      if (order.id !== orderId) return order;
+      const existingPart = order.partsUsed.find(p => p.partId === partId);
+      let newPartsUsed;
+      if (existingPart) {
+        newPartsUsed = order.partsUsed.map(p =>
+          p.partId === partId ? { ...p, quantity: p.quantity + 1 } : p
+        );
+      } else {
+        newPartsUsed = [...order.partsUsed, { partId, name: part.name, cost: part.cost, quantity: 1 }];
+      }
+      return { ...order, partsUsed: newPartsUsed };
+    }));
+  };
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 md:p-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <header className="flex flex-col border-b border-zinc-800 pb-4 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Activity className="w-8 h-8 text-indigo-400" />
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Micro-Maintenance OS</h1>
+                <div className="text-zinc-400 text-sm">
+                  Système de Gestion de Flux & Rentabilité
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-sm text-zinc-300 transition-colors self-start sm:self-auto"
+            >
+              <Settings className="w-4 h-4" />
+              Paramètres
+            </button>
+          </div>
+
+          <nav className="flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800'}`}
+            >
+              <TrendingUp className="w-4 h-4" /> Vue d'ensemble
+            </button>
+            <button
+              onClick={() => setActiveTab('interventions')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'interventions' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800'}`}
+            >
+              <Wrench className="w-4 h-4" /> Interventions
+            </button>
+            <button
+              onClick={() => setActiveTab('parts')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'parts' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-800'}`}
+            >
+              <List className="w-4 h-4" /> Stock Pièces
+            </button>
+          </nav>
+        </header>
+
+        {showSettings && (
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Settings className="text-zinc-400 w-5 h-5" /> Paramètres Globaux
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Objectif Capital (€)</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-100"
+                  value={goal}
+                  onChange={(e) => setGoal(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-zinc-400 mb-2">Limite BFR (Capital Tournant €)</label>
+                <input
+                  type="number"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-zinc-100"
+                  value={revolvingLimit}
+                  onChange={(e) => setRevolvingLimit(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <main className="min-h-[60vh]">
+          {activeTab === 'dashboard' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {/* Dashboard */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="text-emerald-500 w-5 h-5" />
+                <h2 className="text-lg font-semibold">Tableau de Bord & Objectif</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800/50">
+                  <div className="text-sm text-zinc-400 mb-1">Capital Actuel</div>
+                  <div className="text-2xl font-bold font-mono text-zinc-100">{capital.toFixed(2)} €</div>
+                </div>
+                <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800/50">
+                  <div className="text-sm text-zinc-400 mb-1">Bénéfice Total</div>
+                  <div className="text-2xl font-bold font-mono text-emerald-400">+{totalProfit.toFixed(2)} €</div>
+                </div>
+                <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800/50">
+                  <div className="text-sm text-zinc-400 mb-1 flex items-center gap-1">
+                    <Activity className="w-3 h-3" /> Vélocité
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-indigo-400">{velocity.toFixed(2)} € <span className="text-sm font-normal text-zinc-500">/ jour</span></div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">Progression vers {goal} €</span>
+                  <span className="font-mono">{progressPercent.toFixed(1)}%</span>
+                </div>
+                <div className="h-3 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+                  <div
+                    className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Lines Manager */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Settings className="text-indigo-400 w-5 h-5" />
+                  <h2 className="text-lg font-semibold">Gestionnaire de Lignes & ROTI</h2>
+                </div>
+                <button
+                  onClick={() => setIsAddingLine(!isAddingLine)}
+                  className="flex items-center gap-1 text-sm bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nouvelle Ligne
+                </button>
+              </div>
+
+              {isAddingLine && (
+                <div className="bg-zinc-950 p-4 rounded-lg border border-indigo-500/30 mb-4 space-y-4">
+                  <div className="text-sm font-medium text-indigo-400 mb-2">Ajouter une nouvelle catégorie</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Nom de la ligne"
+                      className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                      value={newLineData.name}
+                      onChange={e => setNewLineData({...newLineData, name: e.target.value})}
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        placeholder="Achat moyen"
+                        className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                        value={newLineData.buyPrice || ''}
+                        onChange={e => setNewLineData({...newLineData, buyPrice: parseFloat(e.target.value)})}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Coût pièces"
+                        className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                        value={newLineData.partsCost || ''}
+                        onChange={e => setNewLineData({...newLineData, partsCost: parseFloat(e.target.value)})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 md:col-span-2">
+                      <input
+                        type="number"
+                        placeholder="Revente"
+                        className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                        value={newLineData.sellPrice || ''}
+                        onChange={e => setNewLineData({...newLineData, sellPrice: parseFloat(e.target.value)})}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Temps (min)"
+                        className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                        value={newLineData.laborTimeMinutes || ''}
+                        onChange={e => setNewLineData({...newLineData, laborTimeMinutes: parseInt(e.target.value)})}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Stock init."
+                        className="bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                        value={newLineData.stock || ''}
+                        onChange={e => setNewLineData({...newLineData, stock: parseInt(e.target.value)})}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button onClick={() => setIsAddingLine(false)} className="text-sm px-3 py-1.5 text-zinc-400 hover:text-zinc-200">Annuler</button>
+                    <button onClick={handleAddLine} className="text-sm px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded">Ajouter</button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {lines.map(line => {
+                  const netMargin = line.sellPrice - (line.buyPrice + line.partsCost);
+                  const roti = line.laborTimeMinutes > 0 ? (netMargin / (line.laborTimeMinutes / 60)) : 0;
+
+                  return (
+                    <div key={line.id} className="bg-zinc-950 p-4 rounded-lg border border-zinc-800/50">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <div className="font-medium text-zinc-200">{line.name}</div>
+                        <div className="flex gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <span className="text-zinc-500">Marge:</span>
+                            <span className="font-mono text-emerald-400">{netMargin.toFixed(2)} €</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-zinc-500">ROTI:</span>
+                            <span className="font-mono text-indigo-400">{roti.toFixed(2)} €/h</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <label className="block text-zinc-500 mb-1 text-xs uppercase tracking-wider">Achat moyen</label>
+                          <div className="font-mono">{line.buyPrice.toFixed(2)} €</div>
+                        </div>
+                        <div>
+                          <label className="block text-zinc-500 mb-1 text-xs uppercase tracking-wider">Coût pièces</label>
+                          <div className="font-mono">{line.partsCost.toFixed(2)} €</div>
+                        </div>
+                        <div>
+                          <label className="block text-zinc-500 mb-1 text-xs uppercase tracking-wider">Revente</label>
+                          <div className="font-mono">{line.sellPrice.toFixed(2)} €</div>
+                        </div>
+                        <div>
+                          <label className="block text-zinc-500 mb-1 text-xs uppercase tracking-wider">Main d'œuvre</label>
+                          <div className="font-mono flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-zinc-400" /> {line.laborTimeMinutes} min
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Stock Management */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-6">
+                <Package className="text-blue-400 w-5 h-5" />
+                <h2 className="text-lg font-semibold">Stock & BFR</h2>
+              </div>
+
+              <div className="mb-6 p-4 bg-zinc-950 rounded-lg border border-zinc-800/50">
+                <div className="flex justify-between items-end mb-2">
+                  <div>
+                    <div className="text-sm text-zinc-400">Capital Immobilisé</div>
+                    <div className="text-xl font-bold font-mono text-zinc-100">{tiedUpCapital.toFixed(2)} €</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-zinc-400">Limite Tournant</div>
+                    <div className="text-sm font-mono text-zinc-500">{revolvingLimit.toFixed(2)} €</div>
+                  </div>
+                </div>
+                <div className="h-2 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                  <div
+                    className={`h-full transition-all duration-500 ease-out ${capitalLimitPercent > 90 ? 'bg-red-500' : capitalLimitPercent > 75 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                    style={{ width: `${capitalLimitPercent}%` }}
+                  />
+                </div>
+                {capitalLimitPercent > 90 && (
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-red-400 bg-red-500/10 p-2 rounded">
+                    <AlertTriangle className="w-4 h-4" /> Attention: Limite de BFR presque atteinte
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                {lines.map(line => (
+                  <div key={`stock-${line.id}`} className="flex items-center justify-between p-3 bg-zinc-950 rounded border border-zinc-800/30">
+                    <div className="text-sm truncate pr-4 text-zinc-300 flex-1">{line.name}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-xs text-zinc-500 font-mono hidden md:block">
+                        {((line.buyPrice + line.partsCost) * line.stock).toFixed(2)} €
+                      </div>
+                      <div className={`font-mono font-medium px-2 py-0.5 rounded text-xs ${line.stock === 0 ? 'bg-red-500/10 text-red-400' : line.stock < 3 ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-300'}`}>
+                        {line.stock} en stock
+                      </div>
+                      <button
+                        onClick={() => handleAddStock(line.id)}
+                        className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-200"
+                        title="Ajouter au stock"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Activity Log */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Activity className="text-zinc-400 w-5 h-5" />
+                  <h2 className="text-lg font-semibold">Journal & Simulation</h2>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <div className="text-sm text-zinc-500 mb-2">Simuler une vente rapide :</div>
+                <div className="flex flex-wrap gap-2">
+                  {lines.map(line => (
+                    <button
+                      key={`btn-${line.id}`}
+                      onClick={() => handleSimulateSale(line.id)}
+                      disabled={line.stock <= 0}
+                      className="text-xs flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-300 px-3 py-1.5 rounded transition-colors"
+                    >
+                      <Euro className="w-3 h-3 text-emerald-400" />
+                      {line.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-zinc-400 border-b border-zinc-800 pb-2">Dernières ventes</h3>
+                <div className="space-y-3">
+                  {sales.length === 0 ? (
+                    <div className="text-sm text-zinc-600 italic">Aucune vente enregistrée</div>
+                  ) : (
+                    sales.slice(0, 5).map(sale => (
+                      <div key={sale.id} className="flex items-center justify-between text-sm">
+                        <div>
+                          <div className="text-zinc-300">{sale.lineName}</div>
+                          <div className="text-xs text-zinc-500">
+                            {new Date(sale.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <div className="font-mono text-emerald-400 font-medium">+{sale.profit.toFixed(2)} €</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          )}
+
+          {activeTab === 'interventions' && (
+            <div className="space-y-6">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="text-amber-500 w-5 h-5" />
+                    <h2 className="text-lg font-semibold">Suivi des Interventions</h2>
+                  </div>
+                  <button
+                    onClick={() => setIsAddingIntervention(!isAddingIntervention)}
+                    className="flex items-center gap-1 text-sm bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nouvelle Réparation
+                  </button>
+                </div>
+
+                {isAddingIntervention && (
+                  <div className="bg-zinc-950 p-4 rounded-lg border border-amber-500/30 mb-6 space-y-4">
+                    <div className="text-sm font-medium text-amber-500 mb-2">Enregistrer un nouvel appareil</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">Catégorie / Appareil</label>
+                        <select
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                          value={newInterventionData.lineId}
+                          onChange={e => setNewInterventionData({...newInterventionData, lineId: e.target.value})}
+                        >
+                          <option value="">Sélectionner...</option>
+                          {lines.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 mb-1">URL Photo (Optionnel)</label>
+                        <input
+                          type="text"
+                          placeholder="https://..."
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100"
+                          value={newInterventionData.photoUrl}
+                          onChange={e => setNewInterventionData({...newInterventionData, photoUrl: e.target.value})}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-xs text-zinc-500 mb-1">Problème technique (Symptômes)</label>
+                        <textarea
+                          rows="2"
+                          placeholder="Ex: Stick gauche drift fortement vers le haut..."
+                          className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-sm text-zinc-100 resize-none"
+                          value={newInterventionData.problem}
+                          onChange={e => setNewInterventionData({...newInterventionData, problem: e.target.value})}
+                        ></textarea>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <button onClick={() => setIsAddingIntervention(false)} className="text-sm px-3 py-1.5 text-zinc-400 hover:text-zinc-200">Annuler</button>
+                      <button onClick={handleAddIntervention} className="text-sm px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded">Ajouter</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {workOrders.length === 0 ? (
+                    <div className="col-span-full text-center p-8 text-zinc-500 italic bg-zinc-950/50 rounded-lg border border-zinc-800 border-dashed">
+                      Aucune intervention en cours.
+                    </div>
+                  ) : (
+                    workOrders.map(order => {
+                      const line = lines.find(l => l.id === order.lineId);
+                      const availableParts = spareParts.filter(p => p.lineId === order.lineId);
+                      const totalPartsCost = order.partsUsed.reduce((sum, p) => sum + (p.cost * p.quantity), 0);
+
+                      return (
+                        <div key={order.id} className="bg-zinc-950 border border-zinc-800/80 rounded-lg overflow-hidden flex flex-col">
+                          <div className="relative h-32 bg-zinc-900 border-b border-zinc-800">
+                            {order.photoUrl ? (
+                              <img src={order.photoUrl} alt="Device" className="w-full h-full object-cover opacity-80" />
+                            ) : (
+                              <div className="flex items-center justify-center w-full h-full text-zinc-700">
+                                <Image className="w-8 h-8" />
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 bg-zinc-950/90 backdrop-blur text-xs font-medium px-2 py-1 rounded border border-zinc-800 text-amber-400">
+                              En cours
+                            </div>
+                          </div>
+
+                          <div className="p-4 flex-1 flex flex-col">
+                            <div className="text-sm text-zinc-400 mb-1">{line ? line.name : 'Inconnu'}</div>
+                            <div className="text-sm text-zinc-200 mb-4">{order.problem}</div>
+
+                            <div className="mt-auto space-y-4">
+                              {/* Parts Used Section */}
+                              <div className="bg-zinc-900 rounded p-3 border border-zinc-800/50">
+                                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Pièces Mobilisées</div>
+                                {order.partsUsed.length === 0 ? (
+                                  <div className="text-xs text-zinc-600 italic">Aucune pièce utilisée</div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {order.partsUsed.map((p, idx) => (
+                                      <div key={idx} className="flex justify-between text-xs">
+                                        <span className="text-zinc-300">{p.quantity}x {p.name}</span>
+                                        <span className="text-zinc-500">{(p.cost * p.quantity).toFixed(2)} €</span>
+                                      </div>
+                                    ))}
+                                    <div className="pt-1 mt-1 border-t border-zinc-800 flex justify-between text-xs font-medium text-amber-500">
+                                      <span>Total Pièces:</span>
+                                      <span>{totalPartsCost.toFixed(2)} €</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Action: Consume Parts */}
+                              <div>
+                                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2">Piocher dans le stock</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {availableParts.map(part => (
+                                    <button
+                                      key={`btn-consume-${part.id}`}
+                                      onClick={() => handleConsumePart(order.id, part.id)}
+                                      disabled={part.stock <= 0}
+                                      className="text-xs bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-300 px-2 py-1 rounded border border-zinc-700 flex items-center gap-1 transition-colors"
+                                      title={`Coût: ${part.cost}€`}
+                                    >
+                                      <Plus className="w-3 h-3 text-emerald-500" />
+                                      {part.name} ({part.stock})
+                                    </button>
+                                  ))}
+                                  {availableParts.length === 0 && <span className="text-xs text-zinc-600 italic">Aucune pièce compatible en stock</span>}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'parts' && (
+            <div className="space-y-6">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <List className="text-blue-400 w-5 h-5" />
+                    <h2 className="text-lg font-semibold">Stock Pièces Détachées</h2>
+                  </div>
+                  <button className="flex items-center gap-1 text-sm bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors">
+                    <Plus className="w-4 h-4" />
+                    Nouvelle Pièce
+                  </button>
+                </div>
+
+                <div className="space-y-8">
+                  {lines.map(line => {
+                    const lineParts = spareParts.filter(p => p.lineId === line.id);
+                    if (lineParts.length === 0) return null;
+
+                    return (
+                      <div key={`parts-group-${line.id}`}>
+                        <h3 className="text-sm font-medium text-zinc-400 border-b border-zinc-800 pb-2 mb-3">{line.name}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {lineParts.map(part => (
+                            <div key={part.id} className="bg-zinc-950 p-4 rounded-lg border border-zinc-800/50 flex flex-col justify-between gap-3">
+                              <div className="font-medium text-zinc-200">{part.name}</div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-zinc-500">Coût unitaire:</span>
+                                <span className="font-mono">{part.cost.toFixed(2)} €</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-zinc-800">
+                                <span className="text-zinc-500">Stock:</span>
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-mono font-medium px-2 py-0.5 rounded text-xs ${part.stock === 0 ? 'bg-red-500/10 text-red-400' : part.stock <= 2 ? 'bg-amber-500/10 text-amber-400' : 'bg-zinc-800 text-zinc-300'}`}>
+                                    {part.stock}
+                                  </span>
+                                  <button
+                                    onClick={() => setSpareParts(prev => prev.map(p => p.id === part.id ? { ...p, stock: p.stock + 1 } : p))}
+                                    className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-zinc-200"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
