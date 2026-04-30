@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Évaluateur de Modèle ONNX</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#121212',
+                            800: '#1e1e1e',
+                            700: '#2d2d2d',
+                            600: '#3d3d3d'
+                        },
+                        accent: {
+                            500: '#3b82f6',
+                            400: '#60a5fa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e5e5e5;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [file, setFile] = useState(null);
+            const [memoryFootprint, setMemoryFootprint] = useState(0);
+            const [parameters, setParameters] = useState(0);
+            const [macs, setMacs] = useState(0);
+            const [cost, setCost] = useState(0);
+            const [score, setScore] = useState(0);
+
+            const handleFileChange = (e) => {
+                const selectedFile = e.target.files[0];
+                if (selectedFile) {
+                    setFile(selectedFile);
+                    setMemoryFootprint(selectedFile.size);
+                }
+            };
+
+            useEffect(() => {
+                const totalCost = Number(parameters) + Number(memoryFootprint) + Number(macs);
+                setCost(totalCost);
+
+                if (totalCost > 0) {
+                    const calcScore = Math.max(1, 25 - Math.log(totalCost));
+                    setScore(calcScore);
+                } else {
+                    setScore(0);
+                }
+            }, [parameters, memoryFootprint, macs]);
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex flex-col items-center justify-center">
+                    <div className="w-full max-w-2xl bg-dark-800 rounded-lg shadow-2xl overflow-hidden border border-dark-700">
+                        <div className="p-6 border-b border-dark-700 bg-dark-900">
+                            <h1 className="text-2xl font-bold text-gray-100 flex items-center">
+                                <svg className="w-6 h-6 mr-3 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+                                Évaluateur ARC-AGI
+                            </h1>
+                            <p className="text-sm text-gray-400 mt-2">Calculez le score de votre modèle basé sur le coût total (Paramètres + Mémoire + MACs).</p>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* File Upload section */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Fichier du modèle (ONNX ou autre)
+                                </label>
+                                <div className="flex items-center justify-center w-full">
+                                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dark-600 border-dashed rounded-lg cursor-pointer bg-dark-700 hover:bg-dark-600 transition duration-200">
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            <svg className="w-8 h-8 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                            <p className="mb-2 text-sm text-gray-300"><span className="font-semibold">Cliquez pour téléverser</span> ou glissez-déposez</p>
+                                            <p className="text-xs text-gray-500">Tout type de fichier accepté</p>
+                                        </div>
+                                        <input id="dropzone-file" type="file" className="hidden" onChange={handleFileChange} />
+                                    </label>
+                                </div>
+                                {file && (
+                                    <div className="mt-3 flex items-center text-sm text-green-400 bg-dark-900 p-2 rounded border border-dark-700">
+                                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                                        Fichier chargé : <span className="font-mono ml-2 text-gray-300">{file.name}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {/* Parameters */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Nombre de paramètres
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-dark-900 border border-dark-600 rounded-md py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-mono"
+                                        placeholder="0"
+                                        value={parameters || ''}
+                                        onChange={(e) => setParameters(e.target.value)}
+                                        data-testid="input-parameters"
+                                    />
+                                </div>
+
+                                {/* Memory Footprint */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Empreinte mémoire (octets)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-dark-900 border border-dark-600 rounded-md py-2 px-3 text-gray-400 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-mono cursor-not-allowed"
+                                        placeholder="0"
+                                        value={memoryFootprint}
+                                        readOnly
+                                        title="Rempli automatiquement lors du chargement du fichier"
+                                        data-testid="input-memory"
+                                    />
+                                </div>
+
+                                {/* MACs */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        Opérations MACs
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        className="w-full bg-dark-900 border border-dark-600 rounded-md py-2 px-3 text-gray-200 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-mono"
+                                        placeholder="0"
+                                        value={macs || ''}
+                                        onChange={(e) => setMacs(e.target.value)}
+                                        data-testid="input-macs"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Results Section */}
+                        <div className="bg-dark-900 p-6 border-t border-dark-700">
+                            <h2 className="text-lg font-semibold text-gray-200 mb-4 uppercase tracking-wider text-sm">Résultats d'évaluation</h2>
+
+                            <div className="flex flex-col md:flex-row gap-4 items-stretch">
+                                <div className="flex-1 bg-dark-800 border border-dark-600 rounded-lg p-4 flex flex-col justify-center">
+                                    <span className="text-gray-400 text-sm mb-1">Coût Total</span>
+                                    <span className="text-2xl font-mono text-gray-100" data-testid="output-cost">{cost.toLocaleString('fr-FR')}</span>
+                                </div>
+
+                                <div className="flex-1 bg-gradient-to-br from-dark-800 to-dark-700 border border-accent-500/30 rounded-lg p-4 flex flex-col justify-center relative overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10">
+                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A12.014 12.014 0 0010.3 1c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-1.046-5.006-2.91-9.25C18.156 1.848 16.038 0 13.5 0a3.486 3.486 0 00-2.2.954z" clipRule="evenodd"></path></svg>
+                                    </div>
+                                    <span className="text-accent-400 text-sm font-semibold mb-1 uppercase tracking-widest z-10">Score Final</span>
+                                    <span className="text-4xl font-mono font-bold text-white z-10" data-testid="output-score">{score.toFixed(4)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 text-xs text-gray-500 max-w-2xl text-center">
+                        <p>Score calculé selon la formule: <code>max(1, 25 - ln(cost))</code></p>
+                        <p className="mt-1">Le coût est la somme du nombre de paramètres, de l'empreinte mémoire (en octets), et du nombre d'opérations multiply-accumulate (MACs).</p>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
