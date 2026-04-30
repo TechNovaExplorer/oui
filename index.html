@@ -213,9 +213,9 @@
                                     <button
                                         onClick={() => {
                                             const models = {
-                                                "broadcast": "CA06gAEKKgoFaW5wdXQSBm91dHB1dCIISWRlbnRpdHkyD2Jyb2FkY2FzdCBsb2dpYxIPYnJvYWRjYXN0X21vZGVsWh8KBWlucHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeYiAKBm91dHB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHkICEBo=",
-                                                "repeat": "CA06egonCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIMcmVwZWF0IGxvZ2ljEgxyZXBlYXRfbW9kZWxaHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==",
-                                                "mask": "CA06dgolCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIKbWFzayBsb2dpYxIKbWFza19tb2RlbFofCgVpbnB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHmIgCgZvdXRwdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5CAhAa"
+                                                "broadcast": "CA06fQoqCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIPYnJvYWRjYXN0IGxvZ2ljEgxzaW1wbGVfbW9kZWxaHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==",
+                                                "repeat": "CA06egonCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIMcmVwZWF0IGxvZ2ljEgxzaW1wbGVfbW9kZWxaHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==",
+                                                "mask": "CA06eAolCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIKbWFzayBsb2dpYxIMc2ltcGxlX21vZGVsWh8KBWlucHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeYiAKBm91dHB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHkICEBo="
                                             };
                                             const base64Model = models[selectedLogic];
                                             const binaryString = window.atob(base64Model);
@@ -227,7 +227,7 @@
                                             const url = URL.createObjectURL(blob);
                                             const a = document.createElement('a');
                                             a.href = url;
-                                            a.download = `${selectedTaskId}_${selectedLogic}.onnx`;
+                                            a.download = `${selectedTaskId}.onnx`;
                                             document.body.appendChild(a);
                                             a.click();
                                             document.body.removeChild(a);
