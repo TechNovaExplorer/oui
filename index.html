@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARC to ONMX Converter</title>
+    <title>ARC to ONNX Converter</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -150,7 +150,7 @@
 
             return (
                 <div className="container mx-auto p-4">
-                    <h1 className="text-3xl font-bold mb-6 text-blue-400">Convertisseur ARC vers ONMX</h1>
+                    <h1 className="text-3xl font-bold mb-6 text-blue-400">Convertisseur ARC vers ONNX</h1>
                     <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-6">
                         <div className="mb-4">
                             <label className="block text-sm font-medium mb-2 text-gray-300">
@@ -201,12 +201,12 @@
                                 </h2>
                                 <button
                                     onClick={() => {
-                                        const mockONMXCode = `// Code ONMX généré automatiquement pour la tâche ${selectedTaskId}\n// Analyse heuristique : Règle logique estimée.\n\nconst solution = {\n  type: "Transformation",\n  heuristics: ["Mappage de couleur", "Détection de bordure"],\n  task_id: "${selectedTaskId}"\n};\n\nexport default solution;`;
-                                        const blob = new Blob([mockONMXCode], { type: 'text/plain' });
+                                        const mockONNXCode = `// Code ONNX généré automatiquement pour la tâche ${selectedTaskId}\n// Analyse heuristique : Règle logique estimée.\n\nconst solution = {\n  type: "Transformation",\n  heuristics: ["Mappage de couleur", "Détection de bordure"],\n  task_id: "${selectedTaskId}"\n};\n\nexport default solution;`;
+                                        const blob = new Blob([mockONNXCode], { type: 'text/plain' });
                                         const url = URL.createObjectURL(blob);
                                         const a = document.createElement('a');
                                         a.href = url;
-                                        a.download = `${selectedTaskId}_solution.onmx`;
+                                        a.download = `${selectedTaskId}_solution.onnx`;
                                         document.body.appendChild(a);
                                         a.click();
                                         document.body.removeChild(a);
@@ -214,7 +214,7 @@
                                     }}
                                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
                                 >
-                                    Générer & Télécharger Solution (.onmx)
+                                    Générer & Télécharger Solution (.onnx)
                                 </button>
                             </div>
                             <TaskVisualizer task={tasks[selectedTaskId]} />

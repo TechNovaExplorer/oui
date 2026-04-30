@@ -26,7 +26,7 @@ def run_test():
         page.goto(file_url)
 
         # Verify initial state
-        assert "Convertisseur ARC vers ONMX" in page.content()
+        assert "Convertisseur ARC vers ONNX" in page.content()
 
         # We cannot easily trigger a directory file upload via standard Playwright input[type=file]
         # when webkitdirectory is involved without specific setup, but we can capture the initial state.
