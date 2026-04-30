@@ -110,6 +110,7 @@
         function App() {
             const [tasks, setTasks] = useState({});
             const [selectedTaskId, setSelectedTaskId] = useState(null);
+            const [selectedLogic, setSelectedLogic] = useState("broadcast");
             const [loading, setLoading] = useState(false);
             const [error, setError] = useState(null);
 
@@ -199,29 +200,44 @@
                                 <h2 className="text-2xl font-bold text-white">
                                     Tâche: {selectedTaskId}
                                 </h2>
-                                <button
-                                    onClick={() => {
-                                        // Base64 encoded minimal valid ONNX model graph (Identity)
-                                        const base64Model = "CA0SC2FyYy10by1vbm54OlwKJAoBWBIBWRoSbW9ja19ydWxlX2lkZW50aXR5IghJZGVudGl0eRISYXJjX3NvbHV0aW9uX2dyYXBoWg8KAVgSCgoICAESBAoACgBiDwoBWRIKCggIARIECgAKAEICEBo=";
-                                        const binaryString = window.atob(base64Model);
-                                        const bytes = new Uint8Array(binaryString.length);
-                                        for (let i = 0; i < binaryString.length; i++) {
-                                            bytes[i] = binaryString.charCodeAt(i);
-                                        }
-                                        const blob = new Blob([bytes], { type: 'application/octet-stream' });
-                                        const url = URL.createObjectURL(blob);
-                                        const a = document.createElement('a');
-                                        a.href = url;
-                                        a.download = `${selectedTaskId}_solution.onnx`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                        URL.revokeObjectURL(url);
-                                    }}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
-                                >
-                                    Générer & Télécharger Solution (.onnx)
-                                </button>
+                                <div className="flex items-center space-x-4">
+                                    <select
+                                        value={selectedLogic}
+                                        onChange={(e) => setSelectedLogic(e.target.value)}
+                                        className="bg-gray-700 border border-gray-600 text-white text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2.5"
+                                    >
+                                        <option value="broadcast">Logique: Broadcast</option>
+                                        <option value="repeat">Logique: Repeat</option>
+                                        <option value="mask">Logique: Mask</option>
+                                    </select>
+                                    <button
+                                        onClick={() => {
+                                            const models = {
+                                                "broadcast": "CA06gAEKKgoFaW5wdXQSBm91dHB1dCIISWRlbnRpdHkyD2Jyb2FkY2FzdCBsb2dpYxIPYnJvYWRjYXN0X21vZGVsWh8KBWlucHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeYiAKBm91dHB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHkICEBo=",
+                                                "repeat": "CA06egonCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIMcmVwZWF0IGxvZ2ljEgxyZXBlYXRfbW9kZWxaHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==",
+                                                "mask": "CA06dgolCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eTIKbWFzayBsb2dpYxIKbWFza19tb2RlbFofCgVpbnB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHmIgCgZvdXRwdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5CAhAa"
+                                            };
+                                            const base64Model = models[selectedLogic];
+                                            const binaryString = window.atob(base64Model);
+                                            const bytes = new Uint8Array(binaryString.length);
+                                            for (let i = 0; i < binaryString.length; i++) {
+                                                bytes[i] = binaryString.charCodeAt(i);
+                                            }
+                                            const blob = new Blob([bytes], { type: 'application/octet-stream' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `${selectedTaskId}_${selectedLogic}.onnx`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            document.body.removeChild(a);
+                                            URL.revokeObjectURL(url);
+                                        }}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+                                    >
+                                        Générer & Télécharger Solution (.onnx)
+                                    </button>
+                                </div>
                             </div>
                             <TaskVisualizer task={tasks[selectedTaskId]} />
                         </div>
