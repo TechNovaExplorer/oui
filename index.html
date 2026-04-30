@@ -201,8 +201,14 @@
                                 </h2>
                                 <button
                                     onClick={() => {
-                                        const mockONNXCode = `// Code ONNX généré automatiquement pour la tâche ${selectedTaskId}\n// Analyse heuristique : Règle logique estimée.\n\nconst solution = {\n  type: "Transformation",\n  heuristics: ["Mappage de couleur", "Détection de bordure"],\n  task_id: "${selectedTaskId}"\n};\n\nexport default solution;`;
-                                        const blob = new Blob([mockONNXCode], { type: 'text/plain' });
+                                        // Base64 encoded minimal valid ONNX model graph (Identity)
+                                        const base64Model = "CA0SC2FyYy10by1vbm54OlwKJAoBWBIBWRoSbW9ja19ydWxlX2lkZW50aXR5IghJZGVudGl0eRISYXJjX3NvbHV0aW9uX2dyYXBoWg8KAVgSCgoICAESBAoACgBiDwoBWRIKCggIARIECgAKAEICEBo=";
+                                        const binaryString = window.atob(base64Model);
+                                        const bytes = new Uint8Array(binaryString.length);
+                                        for (let i = 0; i < binaryString.length; i++) {
+                                            bytes[i] = binaryString.charCodeAt(i);
+                                        }
+                                        const blob = new Blob([bytes], { type: 'application/octet-stream' });
                                         const url = URL.createObjectURL(blob);
                                         const a = document.createElement('a');
                                         a.href = url;
