@@ -73,7 +73,8 @@
         const ONNX_MODELS = {
             identity: 'CA0SCmFyYy1zb2x2ZXI6aAoZCgVpbnB1dBIGb3V0cHV0IghJZGVudGl0eRIIaWRlbnRpdHlaHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==',
             broadcast: 'CA0SCmFyYy1zb2x2ZXI6pQEKNBIJY29uc3Rfb3V0IghDb25zdGFudCodCgV2YWx1ZSoRCAEQASIEAACAP0IFY29uc3SgAQQKHwoFaW5wdXQKCWNvbnN0X291dBIGb3V0cHV0IgNBZGQSCWJyb2FkY2FzdFofCgVpbnB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHmIgCgZvdXRwdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5CAhAa',
-            mask: 'CA0SCmFyYy1zb2x2ZXI6oAEKNBIJY29uc3Rfb3V0IghDb25zdGFudCodCgV2YWx1ZSoRCAEQASIEAAAAAEIFY29uc3SgAQQKHwoFaW5wdXQKCWNvbnN0X291dBIGb3V0cHV0IgNNdWwSBG1hc2taHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg=='
+            mask: 'CA0SCmFyYy1zb2x2ZXI6oAEKNBIJY29uc3Rfb3V0IghDb25zdGFudCodCgV2YWx1ZSoRCAEQASIEAAAAAEIFY29uc3SgAQQKHwoFaW5wdXQKCWNvbnN0X291dBIGb3V0cHV0IgNNdWwSBG1hc2taHwoFaW5wdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5iIAoGb3V0cHV0EhYKFAgBEhAKAggBCgIICgoCCB4KAggeQgIQGg==',
+            invert: 'CA0SCmFyYy1zb2x2ZXI6ogEKNBIJY29uc3Rfb3V0IghDb25zdGFudCodCgV2YWx1ZSoRCAEQASIEAAAQQUIFY29uc3SgAQQKHwoJY29uc3Rfb3V0CgVpbnB1dBIGb3V0cHV0IgNTdWISBmludmVydFofCgVpbnB1dBIWChQIARIQCgIIAQoCCAoKAggeCgIIHmIgCgZvdXRwdXQSFgoUCAESEAoCCAEKAggKCgIIHgoCCB5CAhAa'
         };
 
         function base64ToBlob(base64, type = "application/octet-stream") {
@@ -166,6 +167,7 @@
 
                 let isIdentity = true;
                 let isMask = true;
+                let isInvert = true;
 
                 for (let pair of trainPairs) {
                     const inp = pair.input;
@@ -176,6 +178,7 @@
                     if (inp.length !== out.length || inp[0].length !== out[0].length) {
                         isIdentity = false;
                         isMask = false;
+                        isInvert = false;
                         break;
                     }
 
@@ -183,6 +186,9 @@
                         for (let c = 0; c < inp[r].length; c++) {
                             if (inp[r][c] !== out[r][c]) isIdentity = false;
                             if (out[r][c] !== 0) isMask = false;
+
+                            // Invert constraint (0-9 palette bounds): target is ~ 9 - input
+                            if (out[r][c] !== Math.abs(9 - inp[r][c])) isInvert = false;
                         }
                     }
                 }
@@ -191,6 +197,8 @@
                     setDetectedLogic('identity');
                 } else if (isMask) {
                     setDetectedLogic('mask');
+                } else if (isInvert) {
+                    setDetectedLogic('invert');
                 } else {
                     setDetectedLogic('broadcast'); // default fallback
                 }
@@ -354,6 +362,7 @@
                                                     <span className="text-xs text-gray-500 max-w-[200px]">
                                                         {detectedLogic === 'identity' && "La sortie est identique à l'entrée."}
                                                         {detectedLogic === 'mask' && "La sortie est remplie de zéros (masque)."}
+                                                        {detectedLogic === 'invert' && "Les couleurs sont inversées (9 - x)."}
                                                         {detectedLogic === 'broadcast' && "Logique complexe (diffusion/ajout détectée)."}
                                                     </span>
                                                 </div>
