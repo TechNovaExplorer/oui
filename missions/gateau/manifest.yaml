@@ -1,15 +1,16 @@
-id: "mission_gateau_001"
-nom: "Faire un gâteau au chocolat"
-objectif: "Préparer et cuire un gâteau au chocolat selon une recette simple."
+id: "mission_gateau_002"
+nom: "Faire un gâteau au chocolat (prix fixe)"
+objectif: "Préparer et cuire un gâteau au chocolat."
 statut: "ouverte"
+cout_fixe: 15
 condition_terminaison:
   type: "liste_taches"
   toutes_les_taches_requises: true
 competences_requises:
   - id: "patisserie_ménagère"
-    niveau_requis: 1
+    niveau_requis: 5
   - id: "bain_marie"
-    niveau_requis: 1
+    niveau_requis: 5
 recompenses:
   pieces: 50
   xp:

@@ -54,6 +54,7 @@ class Mission:
     dependances: List[str] = field(default_factory=list)
     date_creation: str = ""
     tags: List[str] = field(default_factory=list)
+    cout_fixe: Optional[int] = None
 
     def to_dict(self):
         return {
@@ -67,7 +68,8 @@ class Mission:
             "taches": [t.to_dict() for t in self.taches],
             "dependances": self.dependances,
             "date_creation": self.date_creation,
-            "tags": self.tags
+            "tags": self.tags,
+            "cout_fixe": self.cout_fixe
         }
 
     @classmethod

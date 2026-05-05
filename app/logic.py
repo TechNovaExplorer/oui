@@ -6,6 +6,9 @@ import app.storage as storage
 
 def calculer_cout_mission(mission: Mission, competences: List[Competence]) -> int:
     """Calcule le coût en pièces pour activer une mission."""
+    if mission.cout_fixe is not None:
+        return mission.cout_fixe
+
     comp_dict = {c.id: c for c in competences}
     cout_total = 0.0
     for req in mission.competences_requises:
