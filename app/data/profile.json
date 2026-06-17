@@ -1,0 +1,53 @@
+{
+  "pieces": 197,
+  "missions_actives": [
+    {
+      "id": "mission_gateau_002",
+      "nom": "Faire un gâteau au chocolat (prix fixe)",
+      "objectif": "Préparer et cuire un gâteau au chocolat.",
+      "statut": "active",
+      "condition_terminaison": {
+        "type": "liste_taches",
+        "toutes_les_taches_requises": true
+      },
+      "competences_requises": [
+        {
+          "id": "patisserie_ménagère",
+          "niveau_requis": 5
+        },
+        {
+          "id": "bain_marie",
+          "niveau_requis": 5
+        }
+      ],
+      "recompenses": {
+        "pieces": 50,
+        "xp": {
+          "patisserie_ménagère": 40,
+          "bain_marie": 30
+        }
+      },
+      "taches": [
+        {
+          "id": "tache_1",
+          "description": "Rassembler les ingrédients",
+          "terminee": false
+        },
+        {
+          "id": "tache_2",
+          "description": "Suivre la recette étape par étape",
+          "terminee": false
+        }
+      ],
+      "dependances": [],
+      "date_creation": "2025-04-14",
+      "tags": [
+        "cuisine",
+        "gateau"
+      ],
+      "cout_fixe": 15
+    }
+  ],
+  "total_gains": 100,
+  "total_depenses": 51
+}
